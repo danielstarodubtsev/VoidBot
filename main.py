@@ -1,7 +1,7 @@
 """
 The discord VoidBot coded especially for the VOID clan in Territorial.io
 
-Authors:
+Author:
     * DanTheMan (DanTheMan#9743) [id=762353710931509268]
 
 Credit for help, ideas and suggestions:
@@ -17,35 +17,46 @@ Credit for help, ideas and suggestions:
 """
 
 
-import os
-import json
-import discord
 import asyncio
-import string
-import random
+import json
 import math
-from PIL import Image, ImageDraw, ImageColor
+import os
+import random
+import string
+
 from datetime import datetime, timezone
+
+import discord
+
 from discord.ext import commands, tasks
+from PIL import Image, ImageDraw, ImageColor
 
 
 USER_DATA_FILE = "user_data.json"
 CONFIG_FILE = "config.json"
-USER_DATA_BACKUP_FILE = "user_data_backup.json"
 
-
-# Load all the data
-with open(CONFIG_FILE) as config_file:
-    config = json.load(config_file)
-
-with open(USER_DATA_FILE) as user_data_file:
-    user_data = json.load(user_data_file)
-
+# Load config
+if os.path.exists(f"./{CONFIG_FILE}"):
+    with open(CONFIG_FILE) as config_file:
+        config = json.load(config_file)
+else:
+    exit("FATAL ERROR: Impossible to proceed without a config file!")
 
 bot = commands.Bot(command_prefix=config["command_prefix"], intents=discord.Intents.all(), help_command=None)
 
-
 ############################################################### - UTIL FUNCTIONS - ###############################################################
+
+def load_user_data(user_data_file_name: str) -> dict:
+    """Loads the user data from the given file"""
+    
+    if not os.path.exists(f"./{user_data_file_name}"):
+        with open(user_data_file_name, "w") as user_data_file:
+            user_data_file.write(json.dumps(dict(), indent=2))
+        
+    with open(user_data_file_name) as user_data_file:
+        user_data = json.load(user_data_file)
+
+    return user_data
 
 def save_data(save_user_data: bool = True, save_config: bool = True) -> None:
     """Saves all the data to json files"""
@@ -70,8 +81,10 @@ def sort_user_data(user_data: dict, by: str, reverse: bool = True) -> dict:
 def init_user_if_needed(user_id: str) -> None:
     """Adds a new user to the user_data if it doesn't already exist"""
 
-    if user_id not in user_data:
-        user_data[user_id] = {"weekly_points": 0,
+    if user_id in user_data:
+        return
+
+    user_data[user_id] = {"weekly_points": 0,
                             "monthly_points": 0,
                             "total_points": 0,
                             "weekly_wins": 0,
@@ -81,7 +94,7 @@ def init_user_if_needed(user_id: str) -> None:
                             "referrals": [],
                             "commander": "None"}
 
-        save_data(save_config=False)
+    save_data(save_config=False)
 
 def reset_leaderboard(leaderboard_type: str) -> None:
     """Resets a particular leaderboard"""
@@ -249,11 +262,8 @@ Total: {user_data[user_id]["total_points"]} -> {user_data[user_id]["total_points
 async def backup_data() -> None:
     """Backs up all the data to additional json files and sends to the channel given by config["backup_channel_id"]"""
 
-    with open(USER_DATA_BACKUP_FILE, "w") as user_data_backup_file:
-        user_data_backup_file.write(json.dumps(user_data, indent=2))
-
     backup_channel = bot.get_channel(config["backup_channel_id"])
-    await backup_channel.send(datetime.now(timezone.utc), file=discord.File(USER_DATA_BACKUP_FILE))
+    await backup_channel.send(datetime.now(timezone.utc), file=discord.File(USER_DATA_FILE))
 
 ############################################################### - LOOP FUNCTIONS - ###############################################################
 
@@ -557,12 +567,12 @@ async def help(ctx) -> None:
 {config["command_prefix"]}bal [user] - shows the user's balance. By default the user is the one who ran the command
 {config["command_prefix"]}top (X) [keyword] - shows the top X players by <keyword> where keyword may be "weekly", "monthly" or "wins". By default will show the all-time top
 {config["command_prefix"]}lb [user] - shows the user's position on the leaderboard and several players around them. By default the user is the one who ran the command
-{config["command_prefix"]}code [user] - shows the user's referral code. By default the user is the one who ran the command. Only available to members with more than {config["commander_threshold"] - 1} points
+{config["command_prefix"]}code [user] - shows the user's referral code. By default the user is the one who ran the command. Only available to members with at least {config["commander_threshold"]} points
 {config["command_prefix"]}usecode (code) - uses a referral code. Only available to members with less than {config["referral_threshold"]} points
 {config["command_prefix"]}referrals [user] - shows the list of the user's referrals. By default the user is the one who ran the command
 {config["command_prefix"]}help - shows this window
 
-**ADMIN-ONLY COMMANDS**
+**STAFF-ONLY COMMANDS**
 {config["command_prefix"]}a (points) (user) - gives the user a certain amount of points
 {config["command_prefix"]}r (points) (user) - removes a certain amount of points from the user
 {config["command_prefix"]}mult (multiplier) - sets the points multiplier
@@ -573,10 +583,10 @@ async def help(ctx) -> None:
     embed = discord.Embed(title="All VoidBot commands", color=discord.Color.dark_gold(), description=help_text)
     await ctx.send(embed=embed)
 
-############################################################### - ADMIN-ONLY BOT COMMANDS - ###############################################################
+############################################################### - STAFF-ONLY BOT COMMANDS - ###############################################################
 
 @bot.command()
-@commands.has_role(config["admin_role"])
+@commands.has_role(config["staff_role"])
 async def a(ctx, amount: int, user: discord.User) -> None:
     """Adds a certain amount of points to any user"""
 
@@ -595,7 +605,7 @@ async def a(ctx, amount: int, user: discord.User) -> None:
     await manipulate_points(ctx=ctx, amounts=[amount], users=[user])
 
 @bot.command()
-@commands.has_role(config["admin_role"])
+@commands.has_role(config["staff_role"])
 async def r(ctx, amount: int, user: discord.User) -> None:
     """Removes a certain amount of points from any user"""
 
@@ -606,7 +616,7 @@ async def r(ctx, amount: int, user: discord.User) -> None:
     await manipulate_points(ctx=ctx, amounts=[-amount], users=[user])
 
 @bot.command()
-@commands.has_role(config["admin_role"])
+@commands.has_role(config["staff_role"])
 async def mult(ctx, multiplier: float) -> None:
     """Sets a point multiplier (for 2x events etc.)"""
 
@@ -620,7 +630,7 @@ async def mult(ctx, multiplier: float) -> None:
     save_data(save_user_data=False)
 
 @bot.command()
-@commands.has_role(config["admin_role"])
+@commands.has_role(config["staff_role"])
 async def rwp(ctx, amount: int, user: discord.User) -> None:
     """Removes weekly points from user. Doesn't affect monthly/total points"""
 
@@ -646,7 +656,7 @@ Total: {user_data[user_id]["total_points"]} -> {user_data[user_id]["total_points
     await ctx.send(embed=embed)
 
 @bot.command()
-@commands.has_role(config["admin_role"])
+@commands.has_role(config["staff_role"])
 async def rmp(ctx, amount: int, user: discord.User) -> None:
     """Removes monthly points from user. Doesn't affect weekly/total points"""
 
@@ -672,7 +682,7 @@ Total: {user_data[user_id]["total_points"]} -> {user_data[user_id]["total_points
     await ctx.send(embed=embed)
 
 @bot.command()
-@commands.has_role(config["admin_role"])
+@commands.has_role(config["staff_role"])
 async def undo(ctx) -> None:
     "Revertes the last points-related command used by any user"
 
@@ -689,7 +699,7 @@ async def undo(ctx) -> None:
     with open("points_logs.txt", "w") as points_logs_file:
         points_logs_file.write("".join(lines))
 
-############################################################### - EVENT SET UPS - ###############################################################
+############################################################### - ON_EVENT ACTIONS - ###############################################################
 
 @bot.event
 async def on_ready() -> None:
@@ -727,7 +737,7 @@ async def update_rank_special(ctx, member) -> str:
         return new_role.name
 
 @bot.command()
-@commands.has_role(config["admin_role"])
+@commands.has_role(config["staff_role"])
 async def update_all_members(ctx):
     all_members = ctx.guild.members
 
@@ -754,7 +764,7 @@ async def play_sound() -> None:
 
 
 @bot.command()
-@commands.has_role(config["admin_role"])
+@commands.has_role(config["staff_role"])
 async def launch_leaderboards(ctx) -> None:
     """Use for first-ever leaderboards setup in special channel"""
     
@@ -773,6 +783,7 @@ async def launch_leaderboards(ctx) -> None:
 ############################################################### - MAIN PART - ###############################################################
 
 if __name__ == "__main__":
+    user_data = load_user_data(USER_DATA_FILE)
     bot.run(config["token"])
 
 ############################################################### - TODO - ###############################################################

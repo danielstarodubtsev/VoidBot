@@ -1,7 +1,7 @@
 {
   "token": "MTA2NDI2NTI4NDA0MDU0MDE4MQ.G4ZQTh.Tu4WxOD_YrHmLfoUkaCsKZnpVZe8cLArfUdvTI",
   "member_role": "[I] Seeker - 1",
-  "admin_role": "Galaxy Warlord",
+  "staff_role": "Galaxy Warlord",
   "clan_tag": "VOID",
   "command_prefix": "!",
   "server_id": 955596104362233867,
@@ -14,7 +14,7 @@
   "referral_multiplier": 1.1,
   "referral_threshold": 5000,
   "commander_threshold": 10000,
-  "current_weekday": 7,
+  "current_weekday": 2,
   "current_month": 4,
   "roles_threshold": {
     "[I] Seeker - 2": 250,
