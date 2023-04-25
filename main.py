@@ -147,6 +147,19 @@ def generate_referral_code(length: int = 10) -> str:
 
     return code
 
+def has_any_of_the_roles(role_names: list[str]):
+    """Decorator that checks whether the message author has any of the listed roles"""
+
+    async def predicate(ctx) -> bool:
+        res = bool({role.name for role in ctx.author.roles} & set(role_names))
+
+        if not res:
+            raise commands.MissingRole(role_names)
+        
+        return res
+    
+    return commands.check(predicate)
+
 ############################################################### - NON-COMMAND ASYNC FUNCTIONS - ###############################################################
 
 async def update_rank(ctx, user: discord.User) -> str:
@@ -585,7 +598,8 @@ async def help(ctx) -> None:
 ############################################################### - STAFF-ONLY BOT COMMANDS - ###############################################################
 
 @bot.command()
-@commands.has_role(config["staff_role"])
+@commands.has_role(config["member_role"])
+@has_any_of_the_roles(config["staff_roles"])
 async def a(ctx, amount: int, user: discord.User) -> None:
     """Adds a certain amount of points to any user"""
 
@@ -604,7 +618,8 @@ async def a(ctx, amount: int, user: discord.User) -> None:
     await manipulate_points(ctx=ctx, amounts=[amount], users=[user])
 
 @bot.command()
-@commands.has_role(config["staff_role"])
+@commands.has_role(config["member_role"])
+@has_any_of_the_roles(config["staff_roles"])
 async def r(ctx, amount: int, user: discord.User) -> None:
     """Removes a certain amount of points from any user"""
 
@@ -615,7 +630,8 @@ async def r(ctx, amount: int, user: discord.User) -> None:
     await manipulate_points(ctx=ctx, amounts=[-amount], users=[user])
 
 @bot.command()
-@commands.has_role(config["staff_role"])
+@commands.has_role(config["member_role"])
+@has_any_of_the_roles(config["staff_roles"])
 async def mult(ctx, multiplier: float) -> None:
     """Sets a point multiplier (for 2x events etc.)"""
 
@@ -629,7 +645,8 @@ async def mult(ctx, multiplier: float) -> None:
     save_data(save_user_data=False)
 
 @bot.command()
-@commands.has_role(config["staff_role"])
+@commands.has_role(config["member_role"])
+@has_any_of_the_roles(config["staff_roles"])
 async def rwp(ctx, amount: int, user: discord.User) -> None:
     """Removes weekly points from user. Doesn't affect monthly/total points"""
 
@@ -655,7 +672,8 @@ Total: {user_data[user_id]["total_points"]} -> {user_data[user_id]["total_points
     await ctx.send(embed=embed)
 
 @bot.command()
-@commands.has_role(config["staff_role"])
+@commands.has_role(config["member_role"])
+@has_any_of_the_roles(config["staff_roles"])
 async def rmp(ctx, amount: int, user: discord.User) -> None:
     """Removes monthly points from user. Doesn't affect weekly/total points"""
 
@@ -681,7 +699,8 @@ Total: {user_data[user_id]["total_points"]} -> {user_data[user_id]["total_points
     await ctx.send(embed=embed)
 
 @bot.command()
-@commands.has_role(config["staff_role"])
+@commands.has_role(config["member_role"])
+@has_any_of_the_roles(config["staff_roles"])
 async def undo(ctx) -> None:
     "Revertes the last points-related command used by any user"
 

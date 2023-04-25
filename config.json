@@ -5,7 +5,13 @@
   "user_data_file": "user_data.json",
   "achievements_data_file": "achievements_data.json",
   "member_role": "[I] Seeker - 1",
-  "staff_role": "Galaxy Warlord",
+  "staff_roles": [
+    "Galaxy Warlord",
+    "Galaxy Captain",
+    "Galaxy Admiral",
+    "Galaxy Guardian",
+    "Galaxy Leader"
+  ],
   "server_id": 955596104362233867,
   "backup_channel_id": 1099721400060756038,
   "leaderboard_channel_id": 955664838938472468,
