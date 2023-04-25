@@ -32,7 +32,6 @@ from discord.ext import commands, tasks
 from PIL import Image, ImageDraw, ImageColor
 
 
-USER_DATA_FILE = "user_data.json"
 CONFIG_FILE = "config.json"
 
 # Load config
@@ -62,7 +61,7 @@ def save_data(save_user_data: bool = True, save_config: bool = True) -> None:
     """Saves all the data to json files"""
 
     if save_user_data:
-        with open(USER_DATA_FILE, "w") as user_data_file:
+        with open(config["user_data_file"], "w") as user_data_file:
             user_data_file.write(json.dumps(user_data, indent=2))
 
     if save_config:
@@ -263,7 +262,7 @@ async def backup_data() -> None:
     """Backs up all the data to additional json files and sends to the channel given by config["backup_channel_id"]"""
 
     backup_channel = bot.get_channel(config["backup_channel_id"])
-    await backup_channel.send(datetime.now(timezone.utc), file=discord.File(USER_DATA_FILE))
+    await backup_channel.send(datetime.now(timezone.utc), file=discord.File(config["user_data_file"]))
 
 ############################################################### - LOOP FUNCTIONS - ###############################################################
 
@@ -783,7 +782,7 @@ async def launch_leaderboards(ctx) -> None:
 ############################################################### - MAIN PART - ###############################################################
 
 if __name__ == "__main__":
-    user_data = load_user_data(USER_DATA_FILE)
+    user_data = load_user_data(config["user_data_file"])
     bot.run(config["token"])
 
 ############################################################### - TODO - ###############################################################
