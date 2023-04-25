@@ -32,7 +32,6 @@ from discord.ext import commands, tasks
 USER_DATA_FILE = "user_data.json"
 CONFIG_FILE = "config.json"
 USER_DATA_BACKUP_FILE = "user_data_backup.json"
-SOUND_FILE = "contest.mp3"
 
 
 # Load all the data
@@ -690,13 +689,6 @@ async def undo(ctx) -> None:
     with open("points_logs.txt", "w") as points_logs_file:
         points_logs_file.write("".join(lines))
 
-"""
-@bot.command()
-@commands.has_role(config["admin_role"])
-async def join(ctx):
-    channel = ctx.channel
-"""
-
 ############################################################### - EVENT SET UPS - ###############################################################
 
 @bot.event
@@ -705,19 +697,6 @@ async def on_ready() -> None:
 
     print("READY")
     update_leaderboards_in_special_channel.start()
-
-"""
-@bot.event
-async def on_message(message):
-    if config["admin_role"] in [role.name for role in message.author.roles]:
-        if message.content.startswith('!join'):
-            channel = message.author.voice.channel
-            vc = await channel.connect()
-            asyncio.ensure_future(play_sound())
-        elif message.content.startswith('!leave'):
-            vc = bot.voice_clients[0]
-            await vc.disconnect()
-"""
             
 ############################################################### - ARCHIVED COMMANDS AND FUNCTIONS - ###############################################################
 
