@@ -1,0 +1,80 @@
+POINTS:
+    I - Earn 1000 points
+    II - ...
+    ...
+    X - ...
+
+WINS:
+    I - Win a game
+    II - Win 10 games
+    III - Win 50 games
+    IV - Win 100 games
+    V - Win 500 games
+    VI - Win 1000 games
+    VII - Win 2500 games
+    VIII - Win 5000 games
+
+CONTESTS SOLO:
+    I - Win a contest solo
+    II - Win 5 contests solo
+    III - Win 10 contests solo
+
+WEEKLY POINTS:
+    I - Earn 1k points in one week
+    II - Earn 5k points in one week
+    III - Earn 10k point in one week
+    IV - Earn 25k points in one week
+    V - Earn 50k points in one week
+    VI - Earn 75k points in one week
+
+MONTHLY POINTS:
+    I - Earn 10k points in one month
+    II - Earn 30k point in one month
+    III - Earn 50k points in one month
+    IV - Earn 75k points in one month
+    V - Earn 100k points in one month
+    VI - Earn 150k points in one month
+
+WEEKLY RANKS:
+    I - Finish the week in top 10
+    II - Finish the week in top 10 five times
+    III - Finish the week in top 10 ten times
+
+WEEKLY RANKS 2:
+    I - Finish the week in top 5
+    II - Finish the week in top 5 five times
+    III - Finish the week in top 5 ten times
+
+Weekly ranks 3:
+    I - Finish the week in top 1
+    II - Finish the week in top 1 three times
+    III - Finish the week in top 1 five times
+
+MONTHLY RANKS:
+    I - Finish the month in top 10
+    II - Finish the month in top 10 three times
+    III - Finish the month in top 10 five times
+
+MONTHLY RANKS 2:
+    I - Finish the month in top 5
+    II - Finish the month in top 5 three times
+    III - Finish the month in top 5 five times
+
+MONTHLY RANKS 3:
+    I - Finish the month in top 1
+    II - Finish the month in top 1 two times
+    III - Finish the month in top 1 three times
+
+REFERRALS:
+    I - Have a referral
+    II - Have five referrals
+    III - Have ten referrals
+
+ACHIEVEMENTS UNLOCKING:
+    I - Unlock any achievement
+    II - Unlock 10 achievements
+    III - Unlock 25 achievements
+    IV - Unlock 50 achievements
+    V - Unlock all achievements
+
+total achievements: 10+8+3+6+6+3+3+3+3+3+3+3+5=59
