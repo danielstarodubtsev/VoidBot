@@ -151,12 +151,7 @@ def has_any_of_the_roles(role_names: list[str]):
     """Decorator that checks whether the message author has any of the listed roles"""
 
     async def predicate(ctx) -> bool:
-        res = bool({role.name for role in ctx.author.roles} & set(role_names))
-
-        if not res:
-            raise commands.MissingRole(role_names)
-        
-        return res
+        return bool({role.name for role in ctx.author.roles} & set(role_names))
     
     return commands.check(predicate)
 
@@ -287,7 +282,7 @@ async def update_leaderboards_in_special_channel() -> None:
     monthly_lb_embed = create_embed_for_top(top=50, by="monthly_points", title="Monthly leaderboard")
     all_time_lb_embed = create_embed_for_top(top=50, by="total_points", title="All time leaderboard")
 
-    lb_channel = discord.utils.get(bot.get_all_channels(), id=config["leaderboard_channel_id"])
+    lb_channel = bot.get_channel(config["leaderboard_channel_id"])
 
     weekly_lb_message = await lb_channel.fetch_message(config["weekly_leaderboard_id"])
     monthly_lb_message = await lb_channel.fetch_message(config["monthly_leaderboard_id"])
@@ -444,7 +439,7 @@ async def pic_bal(ctx, user: discord.User = None) -> None:
 
 @bot.command()
 @commands.has_role(config["member_role"])
-async def top(ctx, top: int, by="total_points", title=None) -> None:
+async def top(ctx, top: int, by: str = "total_points", title: str = None) -> None:
     """Shows the top X players"""
 
     if top > 30:
@@ -725,7 +720,7 @@ async def on_ready() -> None:
 
     print("READY")
     update_leaderboards_in_special_channel.start()
-            
+
 ############################################################### - ARCHIVED COMMANDS AND FUNCTIONS - ###############################################################
 
 '''
