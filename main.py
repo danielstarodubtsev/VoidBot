@@ -91,7 +91,8 @@ def init_user_if_needed(user_id: str) -> None:
                             "total_wins": 0,
                             "referral_code": generate_referral_code(),
                             "referrals": [],
-                            "commander": "None"}
+                            "commander": None,
+                            "unlocked_achievements": []}
 
     save_data(save_config=False)
 
@@ -242,8 +243,8 @@ Total: {user_data[user_id]["total_points"]} -> {user_data[user_id]["total_points
         if user_data[user_id]["total_points"] >= config["commander_threshold"]:
             commander_id = user_data[user_id]["commander"]
 
-            if commander_id != "None":
-                user_data[user_id]["commander"] = "None"
+            if commander_id:
+                user_data[user_id]["commander"] = None
                 user_data[commander_id]["referrals"].remove(user_id)
 
         if abs(amount) >= 10:
@@ -306,7 +307,7 @@ async def g(ctx, amount: int) -> None:
         await show_message(ctx=ctx, message_title="Error!", message_text="Only positive values are allowed")
         return
 
-    if user_data[user_id]["commander"] != "None":
+    if user_data[user_id]["commander"]:
         commander = bot.get_user(int(user_data[user_id]["commander"]))
         await manipulate_points(ctx=ctx, amounts=[1.1 * amount, .1 * amount], users=[ctx.author, commander])
         return
@@ -330,7 +331,7 @@ async def cg(ctx, amount: int, *users: discord.User) -> None:
         user_id = str(user.id)
         init_user_if_needed(user_id=user_id)
 
-        if user_data[user_id]["commander"] == "None":
+        if not user_data[user_id]["commander"]:
             amounts.append(amount * percentages[index])
             result_users.append(user)
         else:
@@ -360,7 +361,7 @@ async def d(ctx, amount: int, *users: discord.User) -> None:
         user_id = str(user.id)
         init_user_if_needed(user_id=user_id)
 
-        if user_data[user_id]["commander"] == "None":
+        if not user_data[user_id]["commander"]:
             amounts.append(amount * percentages[index])
             result_users.append(user)
         else:
@@ -605,7 +606,7 @@ async def a(ctx, amount: int, user: discord.User) -> None:
         await show_message(ctx=ctx, message_title="Error!", message_text="Only positive values are allowed")
         return
 
-    if user_data[user_id]["commander"] != "None":
+    if user_data[user_id]["commander"]:
         commander = bot.get_user(int(user_data[user_id]["commander"]))
         await manipulate_points(ctx=ctx, amounts=[1.1 * amount, .1 * amount], users=[user, commander])
         return
