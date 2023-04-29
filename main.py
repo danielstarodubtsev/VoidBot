@@ -442,7 +442,8 @@ async def picbal(ctx, user: discord.User = None) -> None:
     corner_circle_radius = 30
     background_color = (32, 34, 37, 255)
     transparent_color = (0, 0, 0, 0)
-    header_font = ImageFont.truetype("arial.ttf", 60)
+    header_font = ImageFont.truetype("verdana.ttf", 40)
+    clan_name_font = ImageFont.truetype("verdana.ttf", 30)
 
     if user is None:
         user = bot.get_user(ctx.author.id)
@@ -455,30 +456,30 @@ async def picbal(ctx, user: discord.User = None) -> None:
     pfp = user.display_avatar
     await pfp.to_file(filename="test.png")
 
-    progress_bar_img = Image.new("RGBA", (WIDTH, HEIGHT), color=background_color)
+    progress_bar_img = Image.new("RGBA", (WIDTH, HEIGHT), color=transparent_color)
     drawer = ImageDraw.Draw(progress_bar_img)
 
     # Preparing stuff
     name_to_display = member.display_name + (f"#{user.discriminator}" if member.display_name == user.display_name else "")
     pfp_url = user.avatar
-    response = requests.get(pfp_url)
-    image_data = response.content
+    image_data = requests.get(pfp_url).content
     pfp_image = Image.open(BytesIO(image_data))
-    pfp_image.save("cache_pfp.png")
+    pfp_image = pfp_image.resize((90, 90))
 
-    # Drawing transparent corners
-    drawer.rectangle((0, HEIGHT - corner_circle_radius, corner_circle_radius, HEIGHT), fill=transparent_color)
-    drawer.rectangle((0, 0, corner_circle_radius, corner_circle_radius), fill=transparent_color)
-    drawer.rectangle((WIDTH - corner_circle_radius, 0, WIDTH, corner_circle_radius), fill=transparent_color)
-    drawer.rectangle((WIDTH - corner_circle_radius, HEIGHT - corner_circle_radius, WIDTH, HEIGHT), fill=transparent_color)
-    drawer.ellipse((0, HEIGHT - 2 * corner_circle_radius, 2 * corner_circle_radius, HEIGHT), fill=background_color)
-    drawer.ellipse((0, 0, 2 * corner_circle_radius, 2 * corner_circle_radius), fill=background_color)
-    drawer.ellipse((WIDTH - 2 * corner_circle_radius, 0, WIDTH, 2 * corner_circle_radius), fill=background_color)
-    drawer.ellipse((WIDTH - 2 * corner_circle_radius, HEIGHT - 2 * corner_circle_radius, WIDTH, HEIGHT), fill=background_color)
+    guild_icon_url = ctx.guild.icon
+    image_data = requests.get(guild_icon_url).content
+    guild_icon_image = Image.open(BytesIO(image_data))
+    guild_icon_image = guild_icon_image.resize((35, 35))
 
+    # Filling the background while leaving rounded corners
+    drawer.rounded_rectangle((0, 0, WIDTH, HEIGHT), fill=background_color, radius=corner_circle_radius)
 
-    drawer.line((0, .18 * HEIGHT, WIDTH, .18 * HEIGHT), fill=(255, 255, 255, 255))
-    drawer.text((.02 * WIDTH, .035 * HEIGHT), text=name_to_display, align="left", font=header_font, stroke_width=1)
+    # Placing the stuff in the top left corner
+    progress_bar_img.paste(pfp_image, (20, 20))
+    progress_bar_img.paste(guild_icon_image, (125, 75))
+    drawer.text((125, 20), text=name_to_display, align="left", font=header_font, stroke_width=1)
+    drawer.text((165, 73), text=ctx.guild.name, align="left", font=clan_name_font, fill=(166, 166, 166))
+
 
     progress_bar_img.save("cache_image_bal.png")
 
@@ -486,7 +487,6 @@ async def picbal(ctx, user: discord.User = None) -> None:
         await ctx.send(file=discord.File(pic_file))
     
     os.remove("cache_image_bal.png")
-    os.remove("cache_pfp.png")
 
 @bot.command()
 @commands.has_role(config["member_role"])
