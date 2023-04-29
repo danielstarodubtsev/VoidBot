@@ -23,13 +23,16 @@ import math
 import os
 import random
 import string
+import typing
 
 from datetime import datetime, timezone
+from io import BytesIO
 
 import discord
+import requests
 
 from discord.ext import commands, tasks
-from PIL import Image, ImageDraw, ImageColor
+from PIL import Image, ImageDraw, ImageColor, ImageFont
 
 
 CONFIG_FILE = "config.json"
@@ -156,6 +159,13 @@ def has_any_of_the_roles(role_names: list[str]):
     
     return commands.check(predicate)
 
+def update_achievements(user: discord.User) -> list[str]:
+    """Updates users achievements and returns the new achievements obtained by the user"""
+
+    user_id = str(user.id)
+    
+    return []
+
 ############################################################### - NON-COMMAND ASYNC FUNCTIONS - ###############################################################
 
 async def update_rank(ctx, user: discord.User) -> str:
@@ -185,7 +195,15 @@ async def update_rank(ctx, user: discord.User) -> str:
     if new_role not in member.roles:
         await member.add_roles(new_role)
         return new_role.name
-    
+
+async def update_user(ctx, user: discord.User) -> typing.Tuple[str, list[str]]:
+    """Updates user's ranks and achievements, returnes new rank and the list of all new achievements"""
+
+    new_rank = await update_rank(ctx, user)
+    new_achievements = update_achievements(user)
+
+    return new_rank, new_achievements
+
 async def reset_leaderboards_if_needed() -> None:
     """Check whether a new week/month has started and resets leaderboards if needed. Additionally backups the data files every day"""
 
@@ -252,11 +270,13 @@ Total: {user_data[user_id]["total_points"]} -> {user_data[user_id]["total_points
             user_data[user_id]["monthly_wins"] += amount / abs(amount)
             user_data[user_id]["total_wins"] += amount / abs(amount)
 
-        new_rank = await update_rank(ctx, user)
+        new_rank, new_achievements = await update_user(ctx, user)
         save_data(save_config=False)
         
         if new_rank:
             value += f"{member.display_name} ranked {'up' if amount_with_mult > 0 else 'down'} to {new_rank}\n"
+        if new_achievements:
+            pass
 
     with open("points_logs.txt", "r") as points_logs_file:
         lines = (points_logs_file.readlines() + [f"{[user.id for user in users]} - {result_amounts}\n"])[-500:]
@@ -413,11 +433,16 @@ async def bal(ctx, user: discord.User = None) -> None:
 
 @bot.command()
 @commands.has_role(config["member_role"])
-async def pic_bal(ctx, user: discord.User = None) -> None:
+async def picbal(ctx, user: discord.User = None) -> None:
     """later"""
 
-    WIDTH = 1133
+    WIDTH = 1270
     HEIGHT = 700
+
+    corner_circle_radius = 30
+    background_color = (32, 34, 37, 255)
+    transparent_color = (0, 0, 0, 0)
+    header_font = ImageFont.truetype("arial.ttf", 60)
 
     if user is None:
         user = bot.get_user(ctx.author.id)
@@ -430,13 +455,38 @@ async def pic_bal(ctx, user: discord.User = None) -> None:
     pfp = user.display_avatar
     await pfp.to_file(filename="test.png")
 
-    progress_bar_img = Image.new("RGB", (WIDTH, HEIGHT), color="#202225")
-    progress_bar_img.save("Cache progress bar image.png")
+    progress_bar_img = Image.new("RGBA", (WIDTH, HEIGHT), color=background_color)
+    drawer = ImageDraw.Draw(progress_bar_img)
 
-    with open("Cache progress bar image.png", "rb") as pic_file:
+    # Preparing stuff
+    name_to_display = member.display_name + (f"#{user.discriminator}" if member.display_name == user.display_name else "")
+    pfp_url = user.avatar
+    response = requests.get(pfp_url)
+    image_data = response.content
+    pfp_image = Image.open(BytesIO(image_data))
+    pfp_image.save("cache_pfp.png")
+
+    # Drawing transparent corners
+    drawer.rectangle((0, HEIGHT - corner_circle_radius, corner_circle_radius, HEIGHT), fill=transparent_color)
+    drawer.rectangle((0, 0, corner_circle_radius, corner_circle_radius), fill=transparent_color)
+    drawer.rectangle((WIDTH - corner_circle_radius, 0, WIDTH, corner_circle_radius), fill=transparent_color)
+    drawer.rectangle((WIDTH - corner_circle_radius, HEIGHT - corner_circle_radius, WIDTH, HEIGHT), fill=transparent_color)
+    drawer.ellipse((0, HEIGHT - 2 * corner_circle_radius, 2 * corner_circle_radius, HEIGHT), fill=background_color)
+    drawer.ellipse((0, 0, 2 * corner_circle_radius, 2 * corner_circle_radius), fill=background_color)
+    drawer.ellipse((WIDTH - 2 * corner_circle_radius, 0, WIDTH, 2 * corner_circle_radius), fill=background_color)
+    drawer.ellipse((WIDTH - 2 * corner_circle_radius, HEIGHT - 2 * corner_circle_radius, WIDTH, HEIGHT), fill=background_color)
+
+
+    drawer.line((0, .18 * HEIGHT, WIDTH, .18 * HEIGHT), fill=(255, 255, 255, 255))
+    drawer.text((.02 * WIDTH, .035 * HEIGHT), text=name_to_display, align="left", font=header_font, stroke_width=1)
+
+    progress_bar_img.save("cache_image_bal.png")
+
+    with open("cache_image_bal.png", "rb") as pic_file:
         await ctx.send(file=discord.File(pic_file))
     
-    os.remove("Cache progress bar image.png")
+    os.remove("cache_image_bal.png")
+    os.remove("cache_pfp.png")
 
 @bot.command()
 @commands.has_role(config["member_role"])
