@@ -442,6 +442,7 @@ async def picbal(ctx, user: discord.User = None) -> None:
     corner_circle_radius = 30
     background_color = (32, 34, 37, 255)
     transparent_color = (0, 0, 0, 0)
+    box_color = (47, 49, 54, 255)
     header_font = ImageFont.truetype("verdana.ttf", 40)
     clan_name_font = ImageFont.truetype("verdana.ttf", 30)
 
@@ -479,6 +480,11 @@ async def picbal(ctx, user: discord.User = None) -> None:
     progress_bar_img.paste(guild_icon_image, (125, 75))
     drawer.text((125, 20), text=name_to_display, align="left", font=header_font, stroke_width=1)
     drawer.text((165, 73), text=ctx.guild.name, align="left", font=clan_name_font, fill=(166, 166, 166))
+
+    # dd
+    drawer.rounded_rectangle((20, 129, 417, 370), fill=box_color, radius=corner_circle_radius / 2)
+    drawer.rounded_rectangle((437, 129, 834, 370), fill=box_color, radius=corner_circle_radius / 2)
+    drawer.rounded_rectangle((854, 129, 1251, 370), fill=box_color, radius=corner_circle_radius / 2)
 
 
     progress_bar_img.save("cache_image_bal.png")
