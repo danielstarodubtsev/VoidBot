@@ -447,6 +447,7 @@ async def picbal(ctx, user: discord.User = None) -> None:
     darkest_box_color = (24, 26, 27, 255)
     header_font = ImageFont.truetype("verdana.ttf", 40)
     smaller_font = ImageFont.truetype("verdana.ttf", 30)
+    smallest_font = ImageFont.truetype("verdana.ttf", 11)
 
     if user is None:
         user = bot.get_user(ctx.author.id)
@@ -473,6 +474,11 @@ async def picbal(ctx, user: discord.User = None) -> None:
     image_data = requests.get(guild_icon_url).content
     guild_icon_image = Image.open(BytesIO(image_data))
     guild_icon_image = guild_icon_image.resize((35, 35))
+
+    # coin_emoji_url = discord.utils.get(bot.emojis, name="coin")
+    # image_data = requests.get(coin_emoji_url).content
+    # coin_emoji_image = Image.open(BytesIO(image_data))
+    # coin_emoji_image = coin_emoji_image.resize((25, 25))
 
     weekly_points = user_data[user_id]["weekly_points"]
     monthly_points = user_data[user_id]["monthly_points"]
@@ -507,6 +513,13 @@ async def picbal(ctx, user: discord.User = None) -> None:
     monthly_wins_text_size = smaller_font.getsize(monthly_wins_summary)
     total_wins_text_size = smaller_font.getsize(total_wins_summary)
 
+    lb = [user_info for user_info in list(sort_user_data(user_data=user_data, by="total_points").items()) if bot.get_user(int(user_info[0]))]
+    lb = {elem[0]: elem[1] for elem in lb}
+    keys = list(lb.keys())
+    user_pos = keys.index(user_id)
+    starting_lb_index = max(0, user_pos - 4)
+    ending_lb_index = min(starting_lb_index + 8, len(keys) - 1)
+
     # Filling the background while leaving rounded corners
     drawer.rounded_rectangle((0, 0, WIDTH, HEIGHT), fill=background_color, radius=corner_radius)
 
@@ -514,24 +527,26 @@ async def picbal(ctx, user: discord.User = None) -> None:
     progress_bar_img.paste(pfp_image, (20, 20))
     progress_bar_img.paste(guild_icon_image, (125, 75))
     drawer.text((125, 20), text=name_to_display, align="left", font=header_font, stroke_width=1)
-    drawer.text((165, 73), text=ctx.guild.name, align="left", font=smaller_font, fill=(166, 166, 166))
+    drawer.text((165, 73), text=ctx.guild.name, align="left", font=smaller_font, fill=(166, 166, 166, 255))
 
-    # Draw light boxes
+    # Light boxes
     drawer.rounded_rectangle((20, 129, 417, 370), fill=box_color, radius=corner_radius / 2)
     drawer.rounded_rectangle((437, 129, 834, 370), fill=box_color, radius=corner_radius / 2)
     drawer.rounded_rectangle((854, 129, 1251, 370), fill=box_color, radius=corner_radius / 2)
-    drawer.rounded_rectangle((20, 390, 310, 630), fill=box_color, radius=corner_radius / 2)
-    drawer.rounded_rectangle((330, 390, 620, 630), fill=box_color, radius=corner_radius / 2)
+    drawer.rounded_rectangle((20, 390, 310, 680), fill=box_color, radius=corner_radius / 2)
+    drawer.rounded_rectangle((330, 390, 620, 680), fill=box_color, radius=corner_radius / 2)
 
-    # Draw darker boxes
+    # Darker boxes
     drawer.rounded_rectangle((35, 189, 402, 265), fill=darker_box_color, radius=corner_radius / 4)
     drawer.rounded_rectangle((452, 189, 819, 265), fill=darker_box_color, radius=corner_radius / 4)
     drawer.rounded_rectangle((869, 189, 1236, 265), fill=darker_box_color, radius=corner_radius / 4)
     drawer.rounded_rectangle((35, 279, 402, 355), fill=darker_box_color, radius=corner_radius / 4)
     drawer.rounded_rectangle((452, 279, 819, 355), fill=darker_box_color, radius=corner_radius / 4)
     drawer.rounded_rectangle((869, 279, 1236, 355), fill=darker_box_color, radius=corner_radius / 4)
+    drawer.rounded_rectangle((35, 450, 295, 665), fill=darker_box_color, radius=corner_radius / 4)
+    drawer.rounded_rectangle((345, 450, 605, 665), fill=darker_box_color, radius=corner_radius / 4)
 
-    # Draw darkest boxes
+    # Darkest boxes
     drawer.rounded_rectangle((35, 189, 182, 265), fill=darkest_box_color, radius=corner_radius / 4)
     drawer.rounded_rectangle((452, 189, 599, 265), fill=darkest_box_color, radius=corner_radius / 4)
     drawer.rounded_rectangle((869, 189, 1016, 265), fill=darkest_box_color, radius=corner_radius / 4)
@@ -539,12 +554,14 @@ async def picbal(ctx, user: discord.User = None) -> None:
     drawer.rounded_rectangle((452, 279, 599, 355), fill=darkest_box_color, radius=corner_radius / 4)
     drawer.rounded_rectangle((869, 279, 1016, 355), fill=darkest_box_color, radius=corner_radius / 4)
 
-    # Display boxes names
+    # Boxes names
     drawer.text((35, 134), text="This week", align="left", font=header_font)
     drawer.text((452, 134), text="This month", align="left", font=header_font)
     drawer.text((869, 134), text="All time", align="left", font=header_font)
+    drawer.text((35, 398), text="Points LB", align="left", font=smaller_font)
+    drawer.text((345, 398), text="Wins LB", align="left", font=smaller_font)
 
-    # Display text inside boxes
+    # Text inside boxes
     drawer.text((108 - points_text_size[0] / 2, 222 - points_text_size[1] / 2), text="Points", align="left", font=header_font)
     drawer.text((525 - points_text_size[0] / 2, 222 - points_text_size[1] / 2), text="Points", align="left", font=header_font)
     drawer.text((942 - points_text_size[0] / 2, 222 - points_text_size[1] / 2), text="Points", align="left", font=header_font)
@@ -557,6 +574,14 @@ async def picbal(ctx, user: discord.User = None) -> None:
     drawer.text((292 - weekly_wins_text_size[0] / 2, 317 - weekly_wins_text_size[1] / 2), text=weekly_wins_summary, align="left", font=smaller_font)
     drawer.text((709 - monthly_wins_text_size[0] / 2, 317 - monthly_wins_text_size[1] / 2), text=monthly_wins_summary, align="left", font=smaller_font)
     drawer.text((1126 - total_wins_text_size[0] / 2, 317 - total_wins_text_size[1] / 2), text=total_wins_summary, align="left", font=smaller_font)
+
+    # Points leaderboard
+    for position in range(ending_lb_index, starting_lb_index - 1, -1):
+        current_member = bot.get_guild(config["server_id"]).get_member(int(keys[position]))
+        display_text = f"{position + 1}. {current_member.display_name}: "
+
+        fill_color = (166, 166, 166, 255) if position != user_pos else (255, 255, 255, 255)
+        drawer.text((45, 637 - (ending_lb_index - position) * 22), text=display_text, align="left", font=smallest_font, fill=fill_color)
 
     progress_bar_img.save("cache_image_bal.png")
 
