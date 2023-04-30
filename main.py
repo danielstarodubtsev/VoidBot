@@ -439,12 +439,14 @@ async def picbal(ctx, user: discord.User = None) -> None:
     WIDTH = 1270
     HEIGHT = 700
 
-    corner_circle_radius = 30
+    corner_radius = 30
     background_color = (32, 34, 37, 255)
     transparent_color = (0, 0, 0, 0)
     box_color = (47, 49, 54, 255)
+    darker_box_color = (32, 34, 37, 255)
+    darkest_box_color = (24, 26, 27, 255)
     header_font = ImageFont.truetype("verdana.ttf", 40)
-    clan_name_font = ImageFont.truetype("verdana.ttf", 30)
+    smaller_font = ImageFont.truetype("verdana.ttf", 30)
 
     if user is None:
         user = bot.get_user(ctx.author.id)
@@ -472,20 +474,89 @@ async def picbal(ctx, user: discord.User = None) -> None:
     guild_icon_image = Image.open(BytesIO(image_data))
     guild_icon_image = guild_icon_image.resize((35, 35))
 
+    weekly_points = user_data[user_id]["weekly_points"]
+    monthly_points = user_data[user_id]["monthly_points"]
+    total_points = user_data[user_id]["total_points"]
+
+    weekly_points_place = [user_info[0] for user_info in list(sort_user_data(user_data=user_data, by="weekly_points").items()) if bot.get_user(int(user_info[0]))].index(user_id) + 1
+    monthly_points_place = [user_info[0] for user_info in list(sort_user_data(user_data=user_data, by="monthly_points").items()) if bot.get_user(int(user_info[0]))].index(user_id) + 1
+    total_points_place = [user_info[0] for user_info in list(sort_user_data(user_data=user_data, by="total_points").items()) if bot.get_user(int(user_info[0]))].index(user_id) + 1
+
+    weekly_wins = int(user_data[user_id]["weekly_wins"])
+    monthly_wins = int(user_data[user_id]["monthly_wins"])
+    total_wins = int(user_data[user_id]["total_wins"])
+
+    weekly_wins_place = list(sort_user_data(user_data=user_data, by="weekly_wins").keys()).index(user_id) + 1
+    monthly_wins_place = list(sort_user_data(user_data=user_data, by="monthly_wins").keys()).index(user_id) + 1
+    total_wins_place = list(sort_user_data(user_data=user_data, by="total_wins").keys()).index(user_id) + 1
+
+    weekly_points_summary = f"{weekly_points} (#{weekly_points_place})"
+    monthly_points_summary = f"{monthly_points} (#{monthly_points_place})"
+    total_points_summary = f"{total_points} (#{total_points_place})"
+
+    weekly_wins_summary = f"{weekly_wins} (#{weekly_wins_place})"
+    monthly_wins_summary = f"{monthly_wins} (#{monthly_wins_place})"
+    total_wins_summary = f"{total_wins} (#{total_wins_place})"
+
+    points_text_size = header_font.getsize("Points")
+    wins_text_size = header_font.getsize("Wins")
+    weekly_points_text_size = smaller_font.getsize(weekly_points_summary)
+    monthly_points_text_size = smaller_font.getsize(monthly_points_summary)
+    total_points_text_size = smaller_font.getsize(total_points_summary)
+    weekly_wins_text_size = smaller_font.getsize(weekly_wins_summary)
+    monthly_wins_text_size = smaller_font.getsize(monthly_wins_summary)
+    total_wins_text_size = smaller_font.getsize(total_wins_summary)
+
     # Filling the background while leaving rounded corners
-    drawer.rounded_rectangle((0, 0, WIDTH, HEIGHT), fill=background_color, radius=corner_circle_radius)
+    drawer.rounded_rectangle((0, 0, WIDTH, HEIGHT), fill=background_color, radius=corner_radius)
 
     # Placing the stuff in the top left corner
     progress_bar_img.paste(pfp_image, (20, 20))
     progress_bar_img.paste(guild_icon_image, (125, 75))
     drawer.text((125, 20), text=name_to_display, align="left", font=header_font, stroke_width=1)
-    drawer.text((165, 73), text=ctx.guild.name, align="left", font=clan_name_font, fill=(166, 166, 166))
+    drawer.text((165, 73), text=ctx.guild.name, align="left", font=smaller_font, fill=(166, 166, 166))
 
-    # dd
-    drawer.rounded_rectangle((20, 129, 417, 370), fill=box_color, radius=corner_circle_radius / 2)
-    drawer.rounded_rectangle((437, 129, 834, 370), fill=box_color, radius=corner_circle_radius / 2)
-    drawer.rounded_rectangle((854, 129, 1251, 370), fill=box_color, radius=corner_circle_radius / 2)
+    # Draw light boxes
+    drawer.rounded_rectangle((20, 129, 417, 370), fill=box_color, radius=corner_radius / 2)
+    drawer.rounded_rectangle((437, 129, 834, 370), fill=box_color, radius=corner_radius / 2)
+    drawer.rounded_rectangle((854, 129, 1251, 370), fill=box_color, radius=corner_radius / 2)
+    drawer.rounded_rectangle((20, 390, 310, 630), fill=box_color, radius=corner_radius / 2)
+    drawer.rounded_rectangle((330, 390, 620, 630), fill=box_color, radius=corner_radius / 2)
 
+    # Draw darker boxes
+    drawer.rounded_rectangle((35, 189, 402, 265), fill=darker_box_color, radius=corner_radius / 4)
+    drawer.rounded_rectangle((452, 189, 819, 265), fill=darker_box_color, radius=corner_radius / 4)
+    drawer.rounded_rectangle((869, 189, 1236, 265), fill=darker_box_color, radius=corner_radius / 4)
+    drawer.rounded_rectangle((35, 279, 402, 355), fill=darker_box_color, radius=corner_radius / 4)
+    drawer.rounded_rectangle((452, 279, 819, 355), fill=darker_box_color, radius=corner_radius / 4)
+    drawer.rounded_rectangle((869, 279, 1236, 355), fill=darker_box_color, radius=corner_radius / 4)
+
+    # Draw darkest boxes
+    drawer.rounded_rectangle((35, 189, 182, 265), fill=darkest_box_color, radius=corner_radius / 4)
+    drawer.rounded_rectangle((452, 189, 599, 265), fill=darkest_box_color, radius=corner_radius / 4)
+    drawer.rounded_rectangle((869, 189, 1016, 265), fill=darkest_box_color, radius=corner_radius / 4)
+    drawer.rounded_rectangle((35, 279, 182, 355), fill=darkest_box_color, radius=corner_radius / 4)
+    drawer.rounded_rectangle((452, 279, 599, 355), fill=darkest_box_color, radius=corner_radius / 4)
+    drawer.rounded_rectangle((869, 279, 1016, 355), fill=darkest_box_color, radius=corner_radius / 4)
+
+    # Display boxes names
+    drawer.text((35, 134), text="This week", align="left", font=header_font)
+    drawer.text((452, 134), text="This month", align="left", font=header_font)
+    drawer.text((869, 134), text="All time", align="left", font=header_font)
+
+    # Display text inside boxes
+    drawer.text((108 - points_text_size[0] / 2, 222 - points_text_size[1] / 2), text="Points", align="left", font=header_font)
+    drawer.text((525 - points_text_size[0] / 2, 222 - points_text_size[1] / 2), text="Points", align="left", font=header_font)
+    drawer.text((942 - points_text_size[0] / 2, 222 - points_text_size[1] / 2), text="Points", align="left", font=header_font)
+    drawer.text((108 - wins_text_size[0] / 2, 312 - wins_text_size[1] / 2), text="Wins", align="left", font=header_font)
+    drawer.text((525 - wins_text_size[0] / 2, 312 - wins_text_size[1] / 2), text="Wins", align="left", font=header_font)
+    drawer.text((942 - wins_text_size[0] / 2, 312 - wins_text_size[1] / 2), text="Wins", align="left", font=header_font)
+    drawer.text((292 - weekly_points_text_size[0] / 2, 227 - weekly_points_text_size[1] / 2), text=weekly_points_summary, align="left", font=smaller_font)
+    drawer.text((709 - monthly_points_text_size[0] / 2, 227 - monthly_points_text_size[1] / 2), text=monthly_points_summary, align="left", font=smaller_font)
+    drawer.text((1126 - total_points_text_size[0] / 2, 227 - total_points_text_size[1] / 2), text=total_points_summary, align="left", font=smaller_font)
+    drawer.text((292 - weekly_wins_text_size[0] / 2, 317 - weekly_wins_text_size[1] / 2), text=weekly_wins_summary, align="left", font=smaller_font)
+    drawer.text((709 - monthly_wins_text_size[0] / 2, 317 - monthly_wins_text_size[1] / 2), text=monthly_wins_summary, align="left", font=smaller_font)
+    drawer.text((1126 - total_wins_text_size[0] / 2, 317 - total_wins_text_size[1] / 2), text=total_wins_summary, align="left", font=smaller_font)
 
     progress_bar_img.save("cache_image_bal.png")
 
