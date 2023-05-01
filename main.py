@@ -469,7 +469,7 @@ async def d(ctx, amount: int, *users: discord.User) -> None:
 
 @bot.command()
 @commands.has_role(config["member_role"])
-async def picbal(ctx, user: discord.User = None) -> None:
+async def bal(ctx, user: discord.User = None) -> None:
     """
     Shows info about user, including weekly, monthly and all-time points and wins, user's position on the leaderboards and user's progress towards next ranks
     """
@@ -520,8 +520,11 @@ async def picbal(ctx, user: discord.User = None) -> None:
 
     # Preparing stuff
     pfp_url = user.avatar
-    image_data = requests.get(pfp_url).content
-    pfp_image = Image.open(BytesIO(image_data))
+    try:
+        image_data = requests.get(pfp_url).content
+        pfp_image = Image.open(BytesIO(image_data))
+    except: # Occurs if user doesn't have a pfp
+        pfp_image = Image.open("default_discord_pfp.png")
     pfp_image = pfp_image.resize((90, 90))
 
     guild_icon_url = ctx.guild.icon
