@@ -469,7 +469,7 @@ async def d(ctx, amount: int, *users: discord.User) -> None:
 
 @bot.command()
 @commands.has_role(config["member_role"])
-async def bal(ctx, user: discord.User = None) -> None:
+async def picbal(ctx, user: discord.User = None) -> None:
     """
     Shows info about user, including weekly, monthly and all-time points and wins, user's position on the leaderboards and user's progress towards next ranks
     """
@@ -529,11 +529,6 @@ async def bal(ctx, user: discord.User = None) -> None:
     guild_icon_image = Image.open(BytesIO(image_data))
     guild_icon_image = guild_icon_image.resize((35, 35))
 
-    # coin_emoji_url = discord.utils.get(bot.emojis, name="coin")
-    # image_data = requests.get(coin_emoji_url).content
-    # coin_emoji_image = Image.open(BytesIO(image_data))
-    # coin_emoji_image = coin_emoji_image.resize((25, 25))
-
     weekly_points = user_data[user_id]["weekly_points"]
     monthly_points = user_data[user_id]["monthly_points"]
     total_points = user_data[user_id]["total_points"]
@@ -558,14 +553,14 @@ async def bal(ctx, user: discord.User = None) -> None:
     monthly_wins_summary = f"{monthly_wins} (#{monthly_wins_place})"
     total_wins_summary = f"{total_wins} (#{total_wins_place})"
 
-    points_text_size = header_font.getsize("Points")
-    wins_text_size = header_font.getsize("Wins")
-    weekly_points_text_size = smaller_font.getsize(weekly_points_summary)
-    monthly_points_text_size = smaller_font.getsize(monthly_points_summary)
-    total_points_text_size = smaller_font.getsize(total_points_summary)
-    weekly_wins_text_size = smaller_font.getsize(weekly_wins_summary)
-    monthly_wins_text_size = smaller_font.getsize(monthly_wins_summary)
-    total_wins_text_size = smaller_font.getsize(total_wins_summary)
+    points_text_size = (header_font.getbbox("Points")[2], header_font.getbbox("Points")[3])
+    wins_text_size = (header_font.getbbox("Wins")[2], header_font.getbbox("Wins")[3])
+    weekly_points_text_size = (smaller_font.getbbox(weekly_points_summary)[2], smaller_font.getbbox(weekly_points_summary)[3])
+    monthly_points_text_size = (smaller_font.getbbox(monthly_points_summary)[2], smaller_font.getbbox(monthly_points_summary)[3])
+    total_points_text_size = (smaller_font.getbbox(total_points_summary)[2], smaller_font.getbbox(total_points_summary)[3])
+    weekly_wins_text_size = (smaller_font.getbbox(weekly_wins_summary)[2], smaller_font.getbbox(weekly_wins_summary)[3])
+    monthly_wins_text_size = (smaller_font.getbbox(monthly_wins_summary)[2], smaller_font.getbbox(monthly_wins_summary)[3])
+    total_wins_text_size = (smaller_font.getbbox(total_wins_summary)[2], smaller_font.getbbox(total_wins_summary)[3])
 
     points_lb = [user_info for user_info in list(sort_user_data(user_data=user_data, by="total_points").items()) if bot.get_user(int(user_info[0]))]
     points_lb = {elem[0]: elem[1] for elem in points_lb}
@@ -661,9 +656,9 @@ async def bal(ctx, user: discord.User = None) -> None:
     upper_bar_length = 550 * max(0, min(1, (user_data[user_id]["total_points"] - config["roles_threshold"][member_rank]) / (config["roles_threshold"][next_rank] - config["roles_threshold"][member_rank] + 1)))
     lower_bar_length = 550 * max(0, min(1, (user_data[user_id]["total_points"] - config["roles_threshold"][global_member_rank]) / (config["roles_threshold"][next_global_member_rank] - config["roles_threshold"][global_member_rank] + 1)))
     drawer.text((670, 530), text=member_rank, font=smallest_font)
-    drawer.text((1220 - smallest_font.getsize(next_rank)[0], 530), text=next_rank, font=smallest_font)
+    drawer.text((1220 - smallest_font.getbbox(next_rank)[2], 530), text=next_rank, font=smallest_font)
     drawer.text((670, 630), text=global_member_rank, font=smallest_font)
-    drawer.text((1220 - smallest_font.getsize(next_global_member_rank)[0], 630), text=next_global_member_rank, font=smallest_font)
+    drawer.text((1220 - smallest_font.getbbox(next_global_member_rank)[2], 630), text=next_global_member_rank, font=smallest_font)
     drawer.rounded_rectangle((670, 465, 670 + upper_bar_length, 525), fill=light_grey, radius=corner_radius / 4)
     drawer.rounded_rectangle((670, 565, 670 + lower_bar_length, 625), fill=light_grey, radius=corner_radius / 4)
     upper_percentage = round(upper_bar_length / 550 * 100, 1)
@@ -671,13 +666,13 @@ async def bal(ctx, user: discord.User = None) -> None:
     upper_percentage_text = f"{upper_percentage}%"
     lower_percentage_text = f"{lower_percentage}%"
     if upper_percentage > 50:
-        drawer.text((670 + upper_bar_length / 2 - smaller_font.getsize(upper_percentage_text)[0] / 2, 492 - smaller_font.getsize(upper_percentage_text)[1] / 2), text=upper_percentage_text, font=smaller_font, fill=dark_grey)
+        drawer.text((670 + upper_bar_length / 2 - smaller_font.getbbox(upper_percentage_text)[2] / 2, 492 - smaller_font.getbbox(upper_percentage_text)[3] / 2), text=upper_percentage_text, font=smaller_font, fill=dark_grey)
     else:
-        drawer.text((670 + 550 / 2 + upper_bar_length / 2 - smaller_font.getsize(upper_percentage_text)[0] / 2, 491 - smaller_font.getsize(upper_percentage_text)[1] / 2), text=upper_percentage_text, font=smaller_font)
+        drawer.text((670 + 550 / 2 + upper_bar_length / 2 - smaller_font.getbbox(upper_percentage_text)[2] / 2, 491 - smaller_font.getbbox(upper_percentage_text)[3] / 2), text=upper_percentage_text, font=smaller_font)
     if lower_percentage > 50:
-        drawer.text((670 + lower_bar_length / 2 - smaller_font.getsize(lower_percentage_text)[0] / 2, 592 - smaller_font.getsize(lower_percentage_text)[1] / 2), text=lower_percentage_text, font=smaller_font, fill=dark_grey)
+        drawer.text((670 + lower_bar_length / 2 - smaller_font.getbbox(lower_percentage_text)[2] / 2, 592 - smaller_font.getbbox(lower_percentage_text)[3] / 2), text=lower_percentage_text, font=smaller_font, fill=dark_grey)
     else:
-        drawer.text((670 + 550 / 2 + lower_bar_length / 2 - smaller_font.getsize(lower_percentage_text)[0] / 2, 592 - smaller_font.getsize(lower_percentage_text)[1] / 2), text=lower_percentage_text, font=smaller_font)
+        drawer.text((670 + 550 / 2 + lower_bar_length / 2 - smaller_font.getbbox(lower_percentage_text)[2] / 2, 592 - smaller_font.getbbox(lower_percentage_text)[3] / 2), text=lower_percentage_text, font=smaller_font)
 
     progress_bar_img.save("cache_image_bal.png")
 
