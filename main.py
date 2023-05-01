@@ -49,7 +49,9 @@ bot = commands.Bot(command_prefix=config["command_prefix"], intents=discord.Inte
 ############################################################### - UTIL FUNCTIONS - ###############################################################
 
 def load_user_data(user_data_file_name: str) -> dict:
-    """Loads the user data from the given file"""
+    """
+    Loads the user data from the given file
+    """
     
     if not os.path.exists(f"./{user_data_file_name}"):
         with open(user_data_file_name, "w") as user_data_file:
@@ -61,7 +63,9 @@ def load_user_data(user_data_file_name: str) -> dict:
     return user_data
 
 def save_data(save_user_data: bool = True, save_config: bool = True) -> None:
-    """Saves all the data to json files"""
+    """
+    Saves all the data to json files
+    """
 
     if save_user_data:
         with open(config["user_data_file"], "w") as user_data_file:
@@ -72,7 +76,9 @@ def save_data(save_user_data: bool = True, save_config: bool = True) -> None:
             config_file.write(json.dumps(config, indent=2))
 
 def sort_user_data(user_data: dict, by: str, reverse: bool = True) -> dict:
-    """Returns the sorted user_data"""
+    """
+    Returns the sorted user_data
+    """
 
     sorted_user_data = list(user_data.items())
     sorted_user_data.sort(key=lambda elem: elem[1][by], reverse=reverse)
@@ -81,7 +87,9 @@ def sort_user_data(user_data: dict, by: str, reverse: bool = True) -> dict:
     return sorted_user_data
 
 def init_user_if_needed(user_id: str) -> None:
-    """Adds a new user to the user_data if it doesn't already exist"""
+    """
+    Adds a new user to the user_data if it doesn't already exist
+    """
 
     if user_id in user_data:
         return
@@ -100,7 +108,9 @@ def init_user_if_needed(user_id: str) -> None:
     save_data(save_config=False)
 
 def reset_leaderboard(leaderboard_type: str) -> None:
-    """Resets a particular leaderboard"""
+    """
+    Resets a particular leaderboard
+    """
 
     if leaderboard_type == "weekly":
         for user_id in user_data:
@@ -120,7 +130,9 @@ def reset_leaderboard(leaderboard_type: str) -> None:
     save_data(save_config=False)
 
 def create_embed_for_top(top: int, by: str, title: str) -> discord.Embed:
-    """Returnes a discord.Embed object for the given top"""
+    """
+    Returnes a discord.Embed object for the given top
+    """
 
     leaderboard = [user_info for user_info in list(sort_user_data(user_data=user_data, by=by).items()) if bot.get_guild(config["server_id"]).get_member(int(user_info[0]))][:top]
     leaderboard = {elem[0]: elem[1] for elem in leaderboard}
@@ -144,7 +156,9 @@ def create_embed_for_top(top: int, by: str, title: str) -> discord.Embed:
     return discord.Embed(color=discord.Color.blue(), title=title, description=embed_text)
 
 def generate_referral_code(length: int = 10) -> str:
-    """Generates a new random referral code of given length"""
+    """
+    Generates a new random referral code of given length
+    """
 
     symbols = string.ascii_lowercase + string.ascii_uppercase + string.digits
     code = "".join([random.choice(symbols) for _ in range(length)])
@@ -152,7 +166,9 @@ def generate_referral_code(length: int = 10) -> str:
     return code
 
 def has_any_of_the_roles(role_names: list[str]):
-    """Decorator that checks whether the message author has any of the listed roles"""
+    """
+    Decorator that checks whether the message author has any of the listed roles
+    """
 
     async def predicate(ctx) -> bool:
         return bool({role.name for role in ctx.author.roles} & set(role_names))
@@ -160,16 +176,55 @@ def has_any_of_the_roles(role_names: list[str]):
     return commands.check(predicate)
 
 def update_achievements(user: discord.User) -> list[str]:
-    """Updates users achievements and returns the new achievements obtained by the user"""
+    """
+    Updates users achievements and returns the new achievements obtained by the user
+    """
 
     user_id = str(user.id)
     
     return []
 
+def shorten_string(string: str, max_length: int) -> str:
+    """
+    If the string is longer than max_length, shortens it and adds dots in the end of the string
+    """
+
+    if len(string) <= max_length:
+        return string
+    
+    return string[:max_length - 2] + ".."
+
+def get_member_rank(member: discord.Member) -> str:
+    """
+    Returns the name of the member's role that represents the member's rank
+    """
+
+    for rank in config["roles_threshold"]:
+        if rank in [role.name for role in member.roles] and rank != get_ranks_list()[0]:
+            return rank
+    
+    return config["member_role"]
+
+def get_ranks_list() -> list[str]:
+    """
+    Returns the list of all ranks names in their correct order
+    """
+
+    return list(config["roles_threshold"].keys())
+
+def is_same_global_rank(rank1: str, rank2: str) -> bool:
+    """
+    [IX] Living Legend - 2 is same global rank as [IX] Living Legend - 4 but not same as [VI] Master - 1
+    """
+
+    return rank1.split(" - ")[0] == rank2.split(" - ")[0]
+
 ############################################################### - NON-COMMAND ASYNC FUNCTIONS - ###############################################################
 
 async def update_rank(ctx, user: discord.User) -> str:
-    """Updated user's rank. Returns the new rank if it was changed"""
+    """
+    Updated user's rank. Returns the new rank if it was changed
+    """
 
     all_rank_roles = [role for role in ctx.guild.roles if role.name in config["roles_threshold"]]
     all_rank_roles.sort(key=lambda role: config["roles_threshold"][role.name])
@@ -184,7 +239,7 @@ async def update_rank(ctx, user: discord.User) -> str:
         return
 
     for rank in all_rank_roles:
-        if rank in member.roles and rank != new_role:
+        if rank in member.roles and rank != new_role and rank.name != get_ranks_list()[0]:
             await member.remove_roles(rank)
 
     for role_name in config["other_roles_threshold"]:
@@ -197,7 +252,9 @@ async def update_rank(ctx, user: discord.User) -> str:
         return new_role.name
 
 async def update_user(ctx, user: discord.User) -> typing.Tuple[str, list[str]]:
-    """Updates user's ranks and achievements, returnes new rank and the list of all new achievements"""
+    """
+    Updates user's ranks and achievements, returnes new rank and the list of all new achievements
+    """
 
     new_rank = await update_rank(ctx, user)
     new_achievements = update_achievements(user)
@@ -205,7 +262,9 @@ async def update_user(ctx, user: discord.User) -> typing.Tuple[str, list[str]]:
     return new_rank, new_achievements
 
 async def reset_leaderboards_if_needed() -> None:
-    """Check whether a new week/month has started and resets leaderboards if needed. Additionally backups the data files every day"""
+    """
+    Check whether a new week/month has started and resets leaderboards if needed. Additionally backups the data files every day
+    """
 
     current_weekday = datetime.isoweekday(datetime.now(timezone.utc))
     current_month = datetime.now(timezone.utc).month
@@ -224,14 +283,18 @@ async def reset_leaderboards_if_needed() -> None:
     save_data(save_user_data=False)
 
 async def show_message(ctx, message_title, message_text: str) -> None:
-    """Shows a message"""
+    """
+    Shows a message
+    """
 
     embed = discord.Embed(color=discord.Color.orange(), title=message_title, description=message_text)
 
     await ctx.send(embed=embed)
 
 async def manipulate_points(ctx, amounts: list[float], users: list[discord.User]) -> None:
-    """Gives the user a certain amount of points"""
+    """
+    Gives the user a certain amount of points
+    """
 
     await reset_leaderboards_if_needed()
     
@@ -288,7 +351,9 @@ Total: {user_data[user_id]["total_points"]} -> {user_data[user_id]["total_points
     await ctx.send(embed=embed)
 
 async def backup_data() -> None:
-    """Backs up all the data to additional json files and sends to the channel given by config["backup_channel_id"]"""
+    """
+    Backs up all the data to additional json files and sends to the channel given by config["backup_channel_id"]
+    """
 
     backup_channel = bot.get_channel(config["backup_channel_id"])
     await backup_channel.send(datetime.now(timezone.utc), file=discord.File(config["user_data_file"]))
@@ -297,7 +362,9 @@ async def backup_data() -> None:
 
 @tasks.loop(minutes=7)
 async def update_leaderboards_in_special_channel() -> None:
-    """Updated leaderboards in the leaderboard channel every seven minutes (to avoid being rate-limited)"""
+    """
+    Updates leaderboards in the leaderboard channel every seven minutes (to avoid being rate-limited)
+    """
 
     weekly_lb_embed = create_embed_for_top(top=50, by="weekly_points", title="Weekly leaderboard")
     monthly_lb_embed = create_embed_for_top(top=50, by="monthly_points", title="Monthly leaderboard")
@@ -318,7 +385,9 @@ async def update_leaderboards_in_special_channel() -> None:
 @bot.command()
 @commands.has_role(config["member_role"])
 async def g(ctx, amount: int) -> None:
-    """Gives the user who ran the command a certain amount of points"""
+    """
+    Gives the user who ran the command a certain amount of points
+    """
 
     user_id = str(ctx.author.id)
     init_user_if_needed(user_id=user_id)
@@ -337,7 +406,9 @@ async def g(ctx, amount: int) -> None:
 @bot.command()
 @commands.has_role(config["member_role"])
 async def cg(ctx, amount: int, *users: discord.User) -> None:
-    """Gives a certain amount of points to multiple users"""
+    """
+    Gives a certain amount of points to multiple users
+    """
 
     if amount <= 0:
         await show_message(ctx=ctx, message_title="Error!", message_text="Only positive values are allowed")
@@ -367,7 +438,9 @@ async def cg(ctx, amount: int, *users: discord.User) -> None:
 @bot.command()
 @commands.has_role(config["member_role"])
 async def d(ctx, amount: int, *users: discord.User) -> None:
-    """Distributes the points equally between listed users"""
+    """
+    Distributes the points equally between listed users
+    """
 
     if amount <= 0:
         await show_message(ctx=ctx, message_title="Error!", message_text="Only positive values are allowed")
@@ -397,44 +470,9 @@ async def d(ctx, amount: int, *users: discord.User) -> None:
 @bot.command()
 @commands.has_role(config["member_role"])
 async def bal(ctx, user: discord.User = None) -> None:
-    """Lets a user check how many points and wins they or another user have"""
-
-    if user is None:
-        user = bot.get_user(ctx.author.id)
-
-    user_id = str(user.id)
-    init_user_if_needed(user_id=user_id)
-
-    member = ctx.guild.get_member(int(user_id))
-
-    weekly_points = user_data[user_id]["weekly_points"]
-    monthly_points = user_data[user_id]["monthly_points"]
-    total_points = user_data[user_id]["total_points"]
-
-    weekly_points_place = [user_info[0] for user_info in list(sort_user_data(user_data=user_data, by="weekly_points").items()) if bot.get_user(int(user_info[0]))].index(user_id) + 1
-    monthly_points_place = [user_info[0] for user_info in list(sort_user_data(user_data=user_data, by="monthly_points").items()) if bot.get_user(int(user_info[0]))].index(user_id) + 1
-    total_points_place = [user_info[0] for user_info in list(sort_user_data(user_data=user_data, by="total_points").items()) if bot.get_user(int(user_info[0]))].index(user_id) + 1
-
-    weekly_wins = user_data[user_id]["weekly_wins"]
-    monthly_wins = user_data[user_id]["monthly_wins"]
-    total_wins = user_data[user_id]["total_wins"]
-
-    weekly_wins_place = list(sort_user_data(user_data=user_data, by="weekly_wins").keys()).index(user_id) + 1
-    monthly_wins_place = list(sort_user_data(user_data=user_data, by="monthly_wins").keys()).index(user_id) + 1
-    total_wins_place = list(sort_user_data(user_data=user_data, by="total_wins").keys()).index(user_id) + 1
-
-    embed = discord.Embed(title=f"{member.display_name}", color=discord.Color.dark_blue())
-    embed = embed.add_field(name="This week", value=f"Points: {weekly_points} (#{weekly_points_place})\nWins: {int(weekly_wins)} (#{weekly_wins_place})")
-    embed = embed.add_field(name="This month", value=f"Points: {monthly_points} (#{monthly_points_place})\nWins: {int(monthly_wins)} (#{monthly_wins_place})")
-    embed = embed.add_field(name="All time", value=f"Points: {total_points} (#{total_points_place})")
-    embed = embed.add_field(name="Win count", value=f"Total wins since 23 jan 2023: {int(total_wins)} (#{total_wins_place})")
-
-    await ctx.send(embed=embed)
-
-@bot.command()
-@commands.has_role(config["member_role"])
-async def picbal(ctx, user: discord.User = None) -> None:
-    """later"""
+    """
+    Shows info about user, including weekly, monthly and all-time points and wins, user's position on the leaderboards and user's progress towards next ranks
+    """
 
     WIDTH = 1270
     HEIGHT = 700
@@ -443,11 +481,13 @@ async def picbal(ctx, user: discord.User = None) -> None:
     background_color = (32, 34, 37, 255)
     transparent_color = (0, 0, 0, 0)
     box_color = (47, 49, 54, 255)
+    light_grey = (166, 166, 166, 255)
+    dark_grey = (36, 36, 36, 255)
     darker_box_color = (32, 34, 37, 255)
     darkest_box_color = (24, 26, 27, 255)
     header_font = ImageFont.truetype("verdana.ttf", 40)
     smaller_font = ImageFont.truetype("verdana.ttf", 30)
-    smallest_font = ImageFont.truetype("verdana.ttf", 11)
+    smallest_font = ImageFont.truetype("verdana.ttf", 14)
 
     if user is None:
         user = bot.get_user(ctx.author.id)
@@ -456,6 +496,21 @@ async def picbal(ctx, user: discord.User = None) -> None:
     init_user_if_needed(user_id=user_id)
 
     member = ctx.guild.get_member(int(user_id))
+    member_rank = get_member_rank(member)
+
+    if member_rank != get_ranks_list()[-1]:
+        next_rank = get_ranks_list()[get_ranks_list().index(member_rank) + 1]
+    else:
+        next_rank = member_rank
+
+    global_member_rank = member_rank.replace("2", "1").replace("3", "1").replace("4", "1").replace("5", "1")
+    if global_member_rank not in get_ranks_list()[-5:]:
+        for rank in get_ranks_list()[get_ranks_list().index(global_member_rank):]:
+            if not is_same_global_rank(global_member_rank, rank):
+                next_global_member_rank = rank
+                break
+    else:
+        next_global_member_rank = get_ranks_list()[-1]
 
     pfp = user.display_avatar
     await pfp.to_file(filename="test.png")
@@ -464,7 +519,6 @@ async def picbal(ctx, user: discord.User = None) -> None:
     drawer = ImageDraw.Draw(progress_bar_img)
 
     # Preparing stuff
-    name_to_display = member.display_name + (f"#{user.discriminator}" if member.display_name == user.display_name else "")
     pfp_url = user.avatar
     image_data = requests.get(pfp_url).content
     pfp_image = Image.open(BytesIO(image_data))
@@ -513,12 +567,19 @@ async def picbal(ctx, user: discord.User = None) -> None:
     monthly_wins_text_size = smaller_font.getsize(monthly_wins_summary)
     total_wins_text_size = smaller_font.getsize(total_wins_summary)
 
-    lb = [user_info for user_info in list(sort_user_data(user_data=user_data, by="total_points").items()) if bot.get_user(int(user_info[0]))]
-    lb = {elem[0]: elem[1] for elem in lb}
-    keys = list(lb.keys())
-    user_pos = keys.index(user_id)
-    starting_lb_index = max(0, user_pos - 4)
-    ending_lb_index = min(starting_lb_index + 8, len(keys) - 1)
+    points_lb = [user_info for user_info in list(sort_user_data(user_data=user_data, by="total_points").items()) if bot.get_user(int(user_info[0]))]
+    points_lb = {elem[0]: elem[1] for elem in points_lb}
+    points_keys = list(points_lb.keys())
+    points_user_pos = points_keys.index(user_id)
+    starting_points_lb_index = max(0, points_user_pos - 3)
+    ending_points_lb_index = min(starting_points_lb_index + 6, len(points_keys) - 1)
+
+    wins_lb = [user_info for user_info in list(sort_user_data(user_data=user_data, by="total_wins").items()) if bot.get_user(int(user_info[0]))]
+    wins_lb = {elem[0]: elem[1] for elem in wins_lb}
+    wins_keys = list(wins_lb.keys())
+    wins_user_pos = wins_keys.index(user_id)
+    starting_wins_lb_index = max(0, wins_user_pos - 3)
+    ending_wins_lb_index = min(starting_wins_lb_index + 6, len(wins_keys) - 1)
 
     # Filling the background while leaving rounded corners
     drawer.rounded_rectangle((0, 0, WIDTH, HEIGHT), fill=background_color, radius=corner_radius)
@@ -526,8 +587,8 @@ async def picbal(ctx, user: discord.User = None) -> None:
     # Placing the stuff in the top left corner
     progress_bar_img.paste(pfp_image, (20, 20))
     progress_bar_img.paste(guild_icon_image, (125, 75))
-    drawer.text((125, 20), text=name_to_display, align="left", font=header_font, stroke_width=1)
-    drawer.text((165, 73), text=ctx.guild.name, align="left", font=smaller_font, fill=(166, 166, 166, 255))
+    drawer.text((125, 20), text=member.display_name, font=header_font, stroke_width=1)
+    drawer.text((165, 73), text=ctx.guild.name, font=smaller_font, fill=light_grey)
 
     # Light boxes
     drawer.rounded_rectangle((20, 129, 417, 370), fill=box_color, radius=corner_radius / 2)
@@ -535,6 +596,7 @@ async def picbal(ctx, user: discord.User = None) -> None:
     drawer.rounded_rectangle((854, 129, 1251, 370), fill=box_color, radius=corner_radius / 2)
     drawer.rounded_rectangle((20, 390, 310, 680), fill=box_color, radius=corner_radius / 2)
     drawer.rounded_rectangle((330, 390, 620, 680), fill=box_color, radius=corner_radius / 2)
+    drawer.rounded_rectangle((640, 390, 1250, 680), fill=box_color, radius=corner_radius / 2)
 
     # Darker boxes
     drawer.rounded_rectangle((35, 189, 402, 265), fill=darker_box_color, radius=corner_radius / 4)
@@ -545,6 +607,7 @@ async def picbal(ctx, user: discord.User = None) -> None:
     drawer.rounded_rectangle((869, 279, 1236, 355), fill=darker_box_color, radius=corner_radius / 4)
     drawer.rounded_rectangle((35, 450, 295, 665), fill=darker_box_color, radius=corner_radius / 4)
     drawer.rounded_rectangle((345, 450, 605, 665), fill=darker_box_color, radius=corner_radius / 4)
+    drawer.rounded_rectangle((655, 450, 1235, 665), fill=darker_box_color, radius=corner_radius / 4)
 
     # Darkest boxes
     drawer.rounded_rectangle((35, 189, 182, 265), fill=darkest_box_color, radius=corner_radius / 4)
@@ -553,35 +616,68 @@ async def picbal(ctx, user: discord.User = None) -> None:
     drawer.rounded_rectangle((35, 279, 182, 355), fill=darkest_box_color, radius=corner_radius / 4)
     drawer.rounded_rectangle((452, 279, 599, 355), fill=darkest_box_color, radius=corner_radius / 4)
     drawer.rounded_rectangle((869, 279, 1016, 355), fill=darkest_box_color, radius=corner_radius / 4)
+    drawer.rounded_rectangle((670, 465, 1220, 525), fill=darkest_box_color, radius=corner_radius / 4)
+    drawer.rounded_rectangle((670, 565, 1220, 625), fill=darkest_box_color, radius=corner_radius / 4)
 
     # Boxes names
-    drawer.text((35, 134), text="This week", align="left", font=header_font)
-    drawer.text((452, 134), text="This month", align="left", font=header_font)
-    drawer.text((869, 134), text="All time", align="left", font=header_font)
-    drawer.text((35, 398), text="Points LB", align="left", font=smaller_font)
-    drawer.text((345, 398), text="Wins LB", align="left", font=smaller_font)
+    drawer.text((35, 134), text="This week", font=header_font)
+    drawer.text((452, 134), text="This month", font=header_font)
+    drawer.text((869, 134), text="All time", font=header_font)
+    drawer.text((35, 398), text="Points LB", font=smaller_font)
+    drawer.text((345, 398), text="Wins LB", font=smaller_font)
+    drawer.text((655, 398), text="Rank progress", font=smaller_font)
 
     # Text inside boxes
-    drawer.text((108 - points_text_size[0] / 2, 222 - points_text_size[1] / 2), text="Points", align="left", font=header_font)
-    drawer.text((525 - points_text_size[0] / 2, 222 - points_text_size[1] / 2), text="Points", align="left", font=header_font)
-    drawer.text((942 - points_text_size[0] / 2, 222 - points_text_size[1] / 2), text="Points", align="left", font=header_font)
-    drawer.text((108 - wins_text_size[0] / 2, 312 - wins_text_size[1] / 2), text="Wins", align="left", font=header_font)
-    drawer.text((525 - wins_text_size[0] / 2, 312 - wins_text_size[1] / 2), text="Wins", align="left", font=header_font)
-    drawer.text((942 - wins_text_size[0] / 2, 312 - wins_text_size[1] / 2), text="Wins", align="left", font=header_font)
-    drawer.text((292 - weekly_points_text_size[0] / 2, 227 - weekly_points_text_size[1] / 2), text=weekly_points_summary, align="left", font=smaller_font)
-    drawer.text((709 - monthly_points_text_size[0] / 2, 227 - monthly_points_text_size[1] / 2), text=monthly_points_summary, align="left", font=smaller_font)
-    drawer.text((1126 - total_points_text_size[0] / 2, 227 - total_points_text_size[1] / 2), text=total_points_summary, align="left", font=smaller_font)
-    drawer.text((292 - weekly_wins_text_size[0] / 2, 317 - weekly_wins_text_size[1] / 2), text=weekly_wins_summary, align="left", font=smaller_font)
-    drawer.text((709 - monthly_wins_text_size[0] / 2, 317 - monthly_wins_text_size[1] / 2), text=monthly_wins_summary, align="left", font=smaller_font)
-    drawer.text((1126 - total_wins_text_size[0] / 2, 317 - total_wins_text_size[1] / 2), text=total_wins_summary, align="left", font=smaller_font)
+    drawer.text((108 - points_text_size[0] / 2, 222 - points_text_size[1] / 2), text="Points", font=header_font)
+    drawer.text((525 - points_text_size[0] / 2, 222 - points_text_size[1] / 2), text="Points", font=header_font)
+    drawer.text((942 - points_text_size[0] / 2, 222 - points_text_size[1] / 2), text="Points", font=header_font)
+    drawer.text((108 - wins_text_size[0] / 2, 312 - wins_text_size[1] / 2), text="Wins", font=header_font)
+    drawer.text((525 - wins_text_size[0] / 2, 312 - wins_text_size[1] / 2), text="Wins", font=header_font)
+    drawer.text((942 - wins_text_size[0] / 2, 312 - wins_text_size[1] / 2), text="Wins", font=header_font)
+    drawer.text((292 - weekly_points_text_size[0] / 2, 227 - weekly_points_text_size[1] / 2), text=weekly_points_summary, font=smaller_font)
+    drawer.text((709 - monthly_points_text_size[0] / 2, 227 - monthly_points_text_size[1] / 2), text=monthly_points_summary, font=smaller_font)
+    drawer.text((1126 - total_points_text_size[0] / 2, 227 - total_points_text_size[1] / 2), text=total_points_summary, font=smaller_font)
+    drawer.text((292 - weekly_wins_text_size[0] / 2, 317 - weekly_wins_text_size[1] / 2), text=weekly_wins_summary, font=smaller_font)
+    drawer.text((709 - monthly_wins_text_size[0] / 2, 317 - monthly_wins_text_size[1] / 2), text=monthly_wins_summary, font=smaller_font)
+    drawer.text((1126 - total_wins_text_size[0] / 2, 317 - total_wins_text_size[1] / 2), text=total_wins_summary, font=smaller_font)
 
     # Points leaderboard
-    for position in range(ending_lb_index, starting_lb_index - 1, -1):
-        current_member = bot.get_guild(config["server_id"]).get_member(int(keys[position]))
-        display_text = f"{position + 1}. {current_member.display_name}: "
+    for position in range(ending_points_lb_index, starting_points_lb_index - 1, -1):
+        current_member = bot.get_guild(config["server_id"]).get_member(int(points_keys[position]))
+        display_text = f"{position + 1}. {shorten_string(current_member.display_name, 20)}: {user_data[str(current_member.id)]['total_points']}"
 
-        fill_color = (166, 166, 166, 255) if position != user_pos else (255, 255, 255, 255)
-        drawer.text((45, 637 - (ending_lb_index - position) * 22), text=display_text, align="left", font=smallest_font, fill=fill_color)
+        fill_color = (166, 166, 166, 255) if position != points_user_pos else (255, 255, 255, 255)
+        drawer.text((43, 636 - (ending_points_lb_index - position) * 30), text=display_text, font=smallest_font, fill=fill_color)
+
+    # Wins leaderboard
+    for position in range(ending_wins_lb_index, starting_wins_lb_index - 1, -1):
+        current_member = bot.get_guild(config["server_id"]).get_member(int(wins_keys[position]))
+        display_text = f"{position + 1}. {shorten_string(current_member.display_name, 20)}: {int(user_data[str(current_member.id)]['total_wins'])}"
+
+        fill_color = (166, 166, 166, 255) if position != wins_user_pos else (255, 255, 255, 255)
+        drawer.text((353, 636 - (ending_wins_lb_index - position) * 30), text=display_text, font=smallest_font, fill=fill_color)
+
+    # Progress bars
+    upper_bar_length = 550 * max(0, min(1, (user_data[user_id]["total_points"] - config["roles_threshold"][member_rank]) / (config["roles_threshold"][next_rank] - config["roles_threshold"][member_rank] + 1)))
+    lower_bar_length = 550 * max(0, min(1, (user_data[user_id]["total_points"] - config["roles_threshold"][global_member_rank]) / (config["roles_threshold"][next_global_member_rank] - config["roles_threshold"][global_member_rank] + 1)))
+    drawer.text((670, 530), text=member_rank, font=smallest_font)
+    drawer.text((1220 - smallest_font.getsize(next_rank)[0], 530), text=next_rank, font=smallest_font)
+    drawer.text((670, 630), text=global_member_rank, font=smallest_font)
+    drawer.text((1220 - smallest_font.getsize(next_global_member_rank)[0], 630), text=next_global_member_rank, font=smallest_font)
+    drawer.rounded_rectangle((670, 465, 670 + upper_bar_length, 525), fill=light_grey, radius=corner_radius / 4)
+    drawer.rounded_rectangle((670, 565, 670 + lower_bar_length, 625), fill=light_grey, radius=corner_radius / 4)
+    upper_percentage = round(upper_bar_length / 550 * 100, 1)
+    lower_percentage = round(lower_bar_length / 550 * 100, 1)
+    upper_percentage_text = f"{upper_percentage}%"
+    lower_percentage_text = f"{lower_percentage}%"
+    if upper_percentage > 50:
+        drawer.text((670 + upper_bar_length / 2 - smaller_font.getsize(upper_percentage_text)[0] / 2, 492 - smaller_font.getsize(upper_percentage_text)[1] / 2), text=upper_percentage_text, font=smaller_font, fill=dark_grey)
+    else:
+        drawer.text((670 + 550 / 2 + upper_bar_length / 2 - smaller_font.getsize(upper_percentage_text)[0] / 2, 491 - smaller_font.getsize(upper_percentage_text)[1] / 2), text=upper_percentage_text, font=smaller_font)
+    if lower_percentage > 50:
+        drawer.text((670 + lower_bar_length / 2 - smaller_font.getsize(lower_percentage_text)[0] / 2, 592 - smaller_font.getsize(lower_percentage_text)[1] / 2), text=lower_percentage_text, font=smaller_font, fill=dark_grey)
+    else:
+        drawer.text((670 + 550 / 2 + lower_bar_length / 2 - smaller_font.getsize(lower_percentage_text)[0] / 2, 592 - smaller_font.getsize(lower_percentage_text)[1] / 2), text=lower_percentage_text, font=smaller_font)
 
     progress_bar_img.save("cache_image_bal.png")
 
@@ -593,7 +689,9 @@ async def picbal(ctx, user: discord.User = None) -> None:
 @bot.command()
 @commands.has_role(config["member_role"])
 async def top(ctx, top: int, by: str = "total_points", title: str = None) -> None:
-    """Shows the top X players"""
+    """
+    Shows the top X players
+    """
 
     if top > 30:
         await show_message(ctx=ctx, message_title="Error!", message_text=f"Cannot display more than 30 players")
@@ -620,7 +718,9 @@ async def top(ctx, top: int, by: str = "total_points", title: str = None) -> Non
 @bot.command()
 @commands.has_role(config["member_role"])
 async def lb(ctx, user: discord.User = None) -> None:
-    """Shows the player's position on the leaderboard and several players around them"""
+    """
+    Shows the player's position on the leaderboard and several players around them
+    """
 
     if not user:
         user = bot.get_user(ctx.author.id)
@@ -659,7 +759,9 @@ async def lb(ctx, user: discord.User = None) -> None:
 @bot.command()
 @commands.has_role(config["member_role"])
 async def code(ctx, user: discord.User = None) -> None:
-    """Shows a message with the user's referral code"""
+    """
+    Shows a message with the user's referral code
+    """
 
     if not user:
         user = bot.get_user(ctx.author.id)
@@ -676,7 +778,9 @@ async def code(ctx, user: discord.User = None) -> None:
 @bot.command()
 @commands.has_role(config["member_role"])
 async def usecode(ctx, code: str) -> None:
-    """Allows a user to use a referral code, if possible"""
+    """
+    Allows a user to use a referral code, if possible
+    """
 
     user_id = str(ctx.author.id)
     init_user_if_needed(user_id=user_id)
@@ -700,7 +804,9 @@ async def usecode(ctx, code: str) -> None:
 @bot.command()
 @commands.has_role(config["member_role"])
 async def referrals(ctx, user: discord.User = None) -> None:
-    """Allows to see all the referrals"""
+    """
+    Allows to see all the referrals
+    """
 
     if user is None:
         user = bot.get_user(ctx.author.id)
@@ -718,7 +824,9 @@ async def referrals(ctx, user: discord.User = None) -> None:
 @bot.command()
 @commands.has_role(config["member_role"])
 async def help(ctx) -> None:
-    """Shows all the commands of the bot"""
+    """
+    Shows all the commands of the bot
+    """
 
     help_text = f"""**BASIC COMMANDS**
 {config["command_prefix"]}g (points) - give the user who used the command a certain amount of points
@@ -749,7 +857,9 @@ async def help(ctx) -> None:
 @commands.has_role(config["member_role"])
 @has_any_of_the_roles(config["staff_roles"])
 async def a(ctx, amount: int, user: discord.User) -> None:
-    """Adds a certain amount of points to any user"""
+    """
+    Adds a certain amount of points to any user
+    """
 
     user_id = str(user.id)
     init_user_if_needed(user_id=user_id)
@@ -769,7 +879,9 @@ async def a(ctx, amount: int, user: discord.User) -> None:
 @commands.has_role(config["member_role"])
 @has_any_of_the_roles(config["staff_roles"])
 async def r(ctx, amount: int, user: discord.User) -> None:
-    """Removes a certain amount of points from any user"""
+    """
+    Removes a certain amount of points from any user
+    """
 
     if amount <= 0:
         await show_message(ctx=ctx, message_title="Error!", message_text="Only positive values are allowed")
@@ -781,7 +893,9 @@ async def r(ctx, amount: int, user: discord.User) -> None:
 @commands.has_role(config["member_role"])
 @has_any_of_the_roles(config["staff_roles"])
 async def mult(ctx, multiplier: float) -> None:
-    """Sets a point multiplier (for 2x events etc.)"""
+    """
+    Sets a point multiplier (for 2x events etc.)
+    """
 
     if multiplier <= 0:
         await show_message(ctx=ctx, message_title="Error!", message_text="Only positive values are allowed")
@@ -796,7 +910,9 @@ async def mult(ctx, multiplier: float) -> None:
 @commands.has_role(config["member_role"])
 @has_any_of_the_roles(config["staff_roles"])
 async def rwp(ctx, amount: int, user: discord.User) -> None:
-    """Removes weekly points from user. Doesn't affect monthly/total points"""
+    """
+    Removes weekly points from user. Doesn't affect monthly/total points
+    """
 
     user_id = str(user.id)
 
@@ -823,7 +939,9 @@ Total: {user_data[user_id]["total_points"]} -> {user_data[user_id]["total_points
 @commands.has_role(config["member_role"])
 @has_any_of_the_roles(config["staff_roles"])
 async def rmp(ctx, amount: int, user: discord.User) -> None:
-    """Removes monthly points from user. Doesn't affect weekly/total points"""
+    """
+    Removes monthly points from user. Doesn't affect weekly/total points
+    """
 
     user_id = str(user.id)
 
@@ -850,7 +968,9 @@ Total: {user_data[user_id]["total_points"]} -> {user_data[user_id]["total_points
 @commands.has_role(config["member_role"])
 @has_any_of_the_roles(config["staff_roles"])
 async def undo(ctx) -> None:
-    "Revertes the last points-related command used by any user"
+    """
+    Revertes the last points-related command used by any user
+    """
 
     with open("points_logs.txt", "r") as points_logs_file:
         lines = points_logs_file.readlines()
@@ -869,7 +989,9 @@ async def undo(ctx) -> None:
 
 @bot.event
 async def on_ready() -> None:
-    """on_ready set ups"""
+    """
+    on_ready set ups
+    """
 
     print("READY")
     update_leaderboards_in_special_channel.start()
