@@ -17,7 +17,6 @@ Credit for help, ideas and suggestions:
 """
 
 
-import asyncio
 import json
 import math
 import os
@@ -32,7 +31,7 @@ import discord
 import requests
 
 from discord.ext import commands, tasks
-from PIL import Image, ImageDraw, ImageColor, ImageFont
+from PIL import Image, ImageDraw, ImageFont
 
 
 CONFIG_FILE = "config.json"
@@ -223,7 +222,7 @@ def is_same_global_rank(rank1: str, rank2: str) -> bool:
 
 async def update_rank(ctx, user: discord.User) -> str:
     """
-    Updated user's rank. Returns the new rank if it was changed
+    Updates user's rank. Returns the new rank if it was changed
     """
 
     all_rank_roles = [role for role in ctx.guild.roles if role.name in config["roles_threshold"]]
@@ -282,7 +281,7 @@ async def reset_leaderboards_if_needed() -> None:
 
     save_data(save_user_data=False)
 
-async def show_message(ctx, message_title, message_text: str) -> None:
+async def show_message(ctx, message_title: str, message_text: str) -> None:
     """
     Shows a message
     """
@@ -352,7 +351,7 @@ Total: {user_data[user_id]["total_points"]} -> {user_data[user_id]["total_points
 
 async def backup_data() -> None:
     """
-    Backs up all the data to additional json files and sends to the channel given by config["backup_channel_id"]
+    Sends the user_data file to the channel given by config["backup_channel_id"]
     """
 
     backup_channel = bot.get_channel(config["backup_channel_id"])
@@ -365,12 +364,12 @@ async def update_leaderboards_in_special_channel() -> None:
     """
     Updates leaderboards in the leaderboard channel every seven minutes (to avoid being rate-limited)
     """
+    
+    lb_channel = bot.get_channel(config["leaderboard_channel_id"])
 
     weekly_lb_embed = create_embed_for_top(top=50, by="weekly_points", title="Weekly leaderboard")
     monthly_lb_embed = create_embed_for_top(top=50, by="monthly_points", title="Monthly leaderboard")
     all_time_lb_embed = create_embed_for_top(top=50, by="total_points", title="All time leaderboard")
-
-    lb_channel = bot.get_channel(config["leaderboard_channel_id"])
 
     weekly_lb_message = await lb_channel.fetch_message(config["weekly_leaderboard_id"])
     monthly_lb_message = await lb_channel.fetch_message(config["monthly_leaderboard_id"])
@@ -382,9 +381,9 @@ async def update_leaderboards_in_special_channel() -> None:
 
 ############################################################### - REGULAR BOT COMMANDS - ###############################################################
 
-@bot.command()
+@bot.command(aliases=["g"])
 @commands.has_role(config["member_role"])
-async def g(ctx, amount: int) -> None:
+async def give_points(ctx, amount: int) -> None:
     """
     Gives the user who ran the command a certain amount of points
     """
@@ -403,9 +402,9 @@ async def g(ctx, amount: int) -> None:
 
     await manipulate_points(ctx=ctx, amounts=[amount], users=[ctx.author])
 
-@bot.command()
+@bot.command(aliases=["cg"])
 @commands.has_role(config["member_role"])
-async def cg(ctx, amount: int, *users: discord.User) -> None:
+async def contest_give(ctx, amount: int, *users: discord.User) -> None:
     """
     Gives a certain amount of points to multiple users
     """
@@ -435,9 +434,9 @@ async def cg(ctx, amount: int, *users: discord.User) -> None:
 
     await manipulate_points(ctx=ctx, amounts=amounts, users=result_users)
 
-@bot.command()
+@bot.command(aliases=["d"])
 @commands.has_role(config["member_role"])
-async def d(ctx, amount: int, *users: discord.User) -> None:
+async def distribute_points(ctx, amount: int, *users: discord.User) -> None:
     """
     Distributes the points equally between listed users
     """
@@ -467,9 +466,9 @@ async def d(ctx, amount: int, *users: discord.User) -> None:
 
     await manipulate_points(ctx=ctx, amounts=amounts, users=result_users)
 
-@bot.command()
+@bot.command(aliases=["bal"])
 @commands.has_role(config["member_role"])
-async def bal(ctx, user: discord.User = None) -> None:
+async def balance(ctx, user: discord.User = None) -> None:
     """
     Shows info about user, including weekly, monthly and all-time points and wins, user's position on the leaderboards and user's progress towards next ranks
     """
@@ -529,8 +528,7 @@ async def bal(ctx, user: discord.User = None) -> None:
 
     guild_icon_url = ctx.guild.icon
     image_data = requests.get(guild_icon_url).content
-    guild_icon_image = Image.open(BytesIO(image_data))
-    guild_icon_image = guild_icon_image.resize((35, 35))
+    guild_icon_image = Image.open(BytesIO(image_data)).resize((35, 35))
 
     weekly_points = user_data[user_id]["weekly_points"]
     monthly_points = user_data[user_id]["monthly_points"]
@@ -713,9 +711,9 @@ async def top(ctx, top: int, by: str = "total_points", title: str = None) -> Non
 
     await ctx.send(embed=embed)
 
-@bot.command()
+@bot.command(aliases=["lb"])
 @commands.has_role(config["member_role"])
-async def lb(ctx, user: discord.User = None) -> None:
+async def leaderboard(ctx, user: discord.User = None) -> None:
     """
     Shows the player's position on the leaderboard and several players around them
     """
@@ -754,9 +752,9 @@ async def lb(ctx, user: discord.User = None) -> None:
 
     await ctx.send(embed=embed)
 
-@bot.command()
+@bot.command(aliases=["code"])
 @commands.has_role(config["member_role"])
-async def code(ctx, user: discord.User = None) -> None:
+async def get_referral_code(ctx, user: discord.User = None) -> None:
     """
     Shows a message with the user's referral code
     """
@@ -773,9 +771,9 @@ async def code(ctx, user: discord.User = None) -> None:
     
     await show_message(ctx=ctx, message_title="Success!", message_text=f"The referral code is {code}")
 
-@bot.command()
+@bot.command(aliases=["usecode"])
 @commands.has_role(config["member_role"])
-async def usecode(ctx, code: str) -> None:
+async def use_referral_code(ctx, code: str) -> None:
     """
     Allows a user to use a referral code, if possible
     """
@@ -799,9 +797,9 @@ async def usecode(ctx, code: str) -> None:
         await show_message(ctx=ctx, message_title="Error!", message_text="No member with such referral code found")
         return
 
-@bot.command()
+@bot.command(aliases=["referrals"])
 @commands.has_role(config["member_role"])
-async def referrals(ctx, user: discord.User = None) -> None:
+async def get_user_referrals(ctx, user: discord.User = None) -> None:
     """
     Allows to see all the referrals
     """
@@ -819,9 +817,9 @@ async def referrals(ctx, user: discord.User = None) -> None:
     
     await show_message(ctx=ctx, message_title="Error!", message_text="No referrals found")
 
-@bot.command()
+@bot.command(alises=["help"])
 @commands.has_role(config["member_role"])
-async def help(ctx) -> None:
+async def help_command(ctx) -> None:
     """
     Shows all the commands of the bot
     """
@@ -851,10 +849,10 @@ async def help(ctx) -> None:
 
 ############################################################### - STAFF-ONLY BOT COMMANDS - ###############################################################
 
-@bot.command()
+@bot.command(aliases=["a"])
 @commands.has_role(config["member_role"])
 @has_any_of_the_roles(config["staff_roles"])
-async def a(ctx, amount: int, user: discord.User) -> None:
+async def add_points(ctx, amount: int, user: discord.User) -> None:
     """
     Adds a certain amount of points to any user
     """
@@ -873,10 +871,10 @@ async def a(ctx, amount: int, user: discord.User) -> None:
 
     await manipulate_points(ctx=ctx, amounts=[amount], users=[user])
 
-@bot.command()
+@bot.command(aliases=["r"])
 @commands.has_role(config["member_role"])
 @has_any_of_the_roles(config["staff_roles"])
-async def r(ctx, amount: int, user: discord.User) -> None:
+async def remove_points(ctx, amount: int, user: discord.User) -> None:
     """
     Removes a certain amount of points from any user
     """
@@ -887,10 +885,10 @@ async def r(ctx, amount: int, user: discord.User) -> None:
     
     await manipulate_points(ctx=ctx, amounts=[-amount], users=[user])
 
-@bot.command()
+@bot.command(aliases=["mult"])
 @commands.has_role(config["member_role"])
 @has_any_of_the_roles(config["staff_roles"])
-async def mult(ctx, multiplier: float) -> None:
+async def set_multiplier(ctx, multiplier: float) -> None:
     """
     Sets a point multiplier (for 2x events etc.)
     """
@@ -904,10 +902,10 @@ async def mult(ctx, multiplier: float) -> None:
     config["multiplier"] = multiplier
     save_data(save_user_data=False)
 
-@bot.command()
+@bot.command(aliases=["rwp"])
 @commands.has_role(config["member_role"])
 @has_any_of_the_roles(config["staff_roles"])
-async def rwp(ctx, amount: int, user: discord.User) -> None:
+async def remove_weekly_points(ctx, amount: int, user: discord.User) -> None:
     """
     Removes weekly points from user. Doesn't affect monthly/total points
     """
@@ -933,10 +931,10 @@ Total: {user_data[user_id]["total_points"]} -> {user_data[user_id]["total_points
 
     await ctx.send(embed=embed)
 
-@bot.command()
+@bot.command(aliases=["rmp"])
 @commands.has_role(config["member_role"])
 @has_any_of_the_roles(config["staff_roles"])
-async def rmp(ctx, amount: int, user: discord.User) -> None:
+async def remove_monthly_points(ctx, amount: int, user: discord.User) -> None:
     """
     Removes monthly points from user. Doesn't affect weekly/total points
     """
@@ -962,10 +960,10 @@ Total: {user_data[user_id]["total_points"]} -> {user_data[user_id]["total_points
 
     await ctx.send(embed=embed)
 
-@bot.command()
+@bot.command(aliases=["undo"])
 @commands.has_role(config["member_role"])
 @has_any_of_the_roles(config["staff_roles"])
-async def undo(ctx) -> None:
+async def undo_last_command(ctx) -> None:
     """
     Revertes the last points-related command used by any user
     """
