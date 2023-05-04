@@ -52,10 +52,12 @@ def load_user_data(user_data_file_name: str) -> dict:
     Loads the user data from the given file
     """
     
+    # If the user data file doesn't exist we create it and fill with an empty json object
     if not os.path.exists(f"./{user_data_file_name}"):
         with open(user_data_file_name, "w") as user_data_file:
             user_data_file.write(json.dumps(dict(), indent=2))
-        
+    
+    # Read the data from json file
     with open(user_data_file_name) as user_data_file:
         user_data = json.load(user_data_file)
 
@@ -682,9 +684,9 @@ async def balance(ctx, user: discord.User = None) -> None:
     
     os.remove("cache_image_bal.png")
 
-@bot.command()
+@bot.command(aliases=["top"])
 @commands.has_role(config["member_role"])
-async def top(ctx, top: int, by: str = "total_points", title: str = None) -> None:
+async def top_players(ctx, top: int, by: str = "total_points", title: str = None) -> None:
     """
     Shows the top X players
     """
