@@ -475,6 +475,8 @@ async def balance(ctx, user: discord.User = None) -> None:
     Shows info about user, including weekly, monthly and all-time points and wins, user's position on the leaderboards and user's progress towards next ranks
     """
 
+    temporary_loading_message = await ctx.send("Loading information about the member... Please be patient")
+
     WIDTH = 1270
     HEIGHT = 700
 
@@ -680,7 +682,8 @@ async def balance(ctx, user: discord.User = None) -> None:
     progress_bar_img.save("cache_image_bal.png")
 
     with open("cache_image_bal.png", "rb") as pic_file:
-        await ctx.send(file=discord.File(pic_file))
+        await temporary_loading_message.add_files(discord.File(pic_file))
+        await temporary_loading_message.edit(content="")
     
     os.remove("cache_image_bal.png")
 
