@@ -701,16 +701,20 @@ async def top_players(ctx, top: int, by: str = "total_points", title: str = None
     if top < 1:
         await show_message(ctx=ctx, message_title="Error!", message_text="Only positive values allowed")
         return
+    
+    by_fix = {"weekly": "weekly_points",
+              "monthly": "monthly_points",
+              "wins": "total_wins",
+              "total_points": "total_points"}
+
+    if by not in by_fix:
+        await show_message(ctx=ctx, message_title="Error!", message_text=f'Unknown keyword "{by}"')
+        return
 
     if not title:
         title = f"Top {top} {config['clan_tag']} players"
 
-    if by == "weekly":
-        by = "weekly_points"
-    elif by == "monthly":
-        by = "monthly_points"
-    elif by == "wins":
-        by = "total_wins"
+    by = by_fix[by]
 
     embed = create_embed_for_top(top=top, by=by, title=title)
 
