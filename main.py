@@ -264,7 +264,9 @@ async def update_user(ctx, user: discord.User) -> typing.Tuple[str, list[str]]:
 
 async def reset_leaderboards_if_needed() -> None:
     """
-    Check whether a new week/month has started and resets leaderboards if needed. Additionally backups the data files every day
+    Check whether a new week/month has started and resets leaderboards if needed
+    Additionally backups the data files every day
+    Additionally sends the summary of the weekly/monthly leaderboard upon reset
     """
 
     current_weekday = datetime.isoweekday(datetime.now(timezone.utc))
@@ -273,12 +275,14 @@ async def reset_leaderboards_if_needed() -> None:
     if current_weekday != config["current_weekday"]:
         config["current_weekday"] = current_weekday
         if current_weekday == 1:
+            await send_leaderboard_summary(leaderboard_type="weekly_points")
             reset_leaderboard(leaderboard_type="weekly")
         
         await backup_data()
 
     if current_month != config["current_month"]:
         config["current_month"] = current_month
+        await send_leaderboard_summary(leaderboard_type="monthly_points")
         reset_leaderboard(leaderboard_type="monthly")
 
     save_data(save_user_data=False)
@@ -357,7 +361,41 @@ async def backup_data() -> None:
     """
 
     backup_channel = bot.get_channel(config["backup_channel_id"])
-    await backup_channel.send(datetime.now(timezone.utc), file=discord.File(config["user_data_file"]))
+    current_datetime = datetime.now(timezone.utc)
+
+    summary = f"""```Type: "user_data" backup
+Date: {current_datetime.date()}
+Time: {current_datetime.time()}
+Size: {os.stat(config["user_data_file"]).st_size} bytes
+Total Members: {len(user_data)}```"""
+
+    await backup_channel.send(summary, file=discord.File(config["user_data_file"]))
+
+async def send_leaderboard_summary(leaderboard_type: str) -> None:
+    """
+    Sends the summary of the leaderboard to the channel given by config["backup_data"]
+    """
+
+    guild = bot.get_guild(config['server_id'])
+    channel = bot.get_channel(config["backup_channel_id"])
+    current_datetime = datetime.now(timezone.utc)
+
+    data = sort_user_data(user_data=user_data, by=leaderboard_type)
+    data = [id for id in data if user_data[id][leaderboard_type] > 0 and guild.get_member(int(id))]
+    file_lines = [f"{index}. {guild.get_member(int(id)).display_name} - {user_data[id][leaderboard_type]}" for index, id in enumerate(data, start=1)]
+
+    with open("cache_leaderboard_summary.txt", "w", encoding="utf-8") as cache_leaderboard_summary_file:
+        cache_leaderboard_summary_file.write("\n".join(file_lines))
+    
+    summary = f"""```Type: leaderboard by "{leaderboard_type}" summary
+Date: {current_datetime.date()}
+Time: {current_datetime.time()}
+Size: {os.stat("cache_leaderboard_summary.txt").st_size} bytes
+Total Members Included: {len(data)}```"""
+
+    await channel.send(summary, file=discord.File("cache_leaderboard_summary.txt"))
+
+    os.remove("cache_leaderboard_summary.txt")
 
 ############################################################### - LOOP FUNCTIONS - ###############################################################
 
