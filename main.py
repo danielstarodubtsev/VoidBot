@@ -594,9 +594,9 @@ async def balance(ctx, user: discord.User = None) -> None:
     drawer.rounded_rectangle((20, 129, 417, 370), fill=box_color, radius=corner_radius / 2)
     drawer.rounded_rectangle((437, 129, 834, 370), fill=box_color, radius=corner_radius / 2)
     drawer.rounded_rectangle((854, 129, 1251, 370), fill=box_color, radius=corner_radius / 2)
-    drawer.rounded_rectangle((20, 390, 310, 680), fill=box_color, radius=corner_radius / 2)
-    drawer.rounded_rectangle((330, 390, 620, 680), fill=box_color, radius=corner_radius / 2)
-    drawer.rounded_rectangle((640, 390, 1250, 680), fill=box_color, radius=corner_radius / 2)
+    drawer.rounded_rectangle((20, 390, 312, 680), fill=box_color, radius=corner_radius / 2)
+    drawer.rounded_rectangle((332, 390, 625, 680), fill=box_color, radius=corner_radius / 2)
+    drawer.rounded_rectangle((645, 390, 1250, 680), fill=box_color, radius=corner_radius / 2)
 
     # Darker boxes
     drawer.rounded_rectangle((35, 189, 402, 265), fill=darker_box_color, radius=corner_radius / 4)
@@ -605,9 +605,9 @@ async def balance(ctx, user: discord.User = None) -> None:
     drawer.rounded_rectangle((35, 279, 402, 355), fill=darker_box_color, radius=corner_radius / 4)
     drawer.rounded_rectangle((452, 279, 819, 355), fill=darker_box_color, radius=corner_radius / 4)
     drawer.rounded_rectangle((869, 279, 1236, 355), fill=darker_box_color, radius=corner_radius / 4)
-    drawer.rounded_rectangle((35, 450, 295, 665), fill=darker_box_color, radius=corner_radius / 4)
-    drawer.rounded_rectangle((345, 450, 605, 665), fill=darker_box_color, radius=corner_radius / 4)
-    drawer.rounded_rectangle((655, 450, 1235, 665), fill=darker_box_color, radius=corner_radius / 4)
+    drawer.rounded_rectangle((35, 450, 297, 665), fill=darker_box_color, radius=corner_radius / 4)
+    drawer.rounded_rectangle((345, 450, 610, 665), fill=darker_box_color, radius=corner_radius / 4)
+    drawer.rounded_rectangle((660, 450, 1235, 665), fill=darker_box_color, radius=corner_radius / 4)
 
     # Darkest boxes
     drawer.rounded_rectangle((35, 189, 182, 265), fill=darkest_box_color, radius=corner_radius / 4)
@@ -616,16 +616,16 @@ async def balance(ctx, user: discord.User = None) -> None:
     drawer.rounded_rectangle((35, 279, 182, 355), fill=darkest_box_color, radius=corner_radius / 4)
     drawer.rounded_rectangle((452, 279, 599, 355), fill=darkest_box_color, radius=corner_radius / 4)
     drawer.rounded_rectangle((869, 279, 1016, 355), fill=darkest_box_color, radius=corner_radius / 4)
-    drawer.rounded_rectangle((670, 465, 1220, 525), fill=darkest_box_color, radius=corner_radius / 4)
-    drawer.rounded_rectangle((670, 565, 1220, 625), fill=darkest_box_color, radius=corner_radius / 4)
+    drawer.rounded_rectangle((675, 465, 1220, 525), fill=darkest_box_color, radius=corner_radius / 4)
+    drawer.rounded_rectangle((675, 565, 1220, 625), fill=darkest_box_color, radius=corner_radius / 4)
 
     # Boxes names
     drawer.text((35, 134), text="This week", font=header_font)
     drawer.text((452, 134), text="This month", font=header_font)
     drawer.text((869, 134), text="All time", font=header_font)
     drawer.text((35, 398), text="Points LB", font=smaller_font)
-    drawer.text((345, 398), text="Wins LB", font=smaller_font)
-    drawer.text((655, 398), text="Rank progress", font=smaller_font)
+    drawer.text((347, 398), text="Wins LB", font=smaller_font)
+    drawer.text((660, 398), text="Rank progress", font=smaller_font)
 
     # Text inside boxes
     drawer.text((108 - points_text_size[0] / 2, 222 - points_text_size[1] / 2), text="Points", font=header_font)
@@ -658,26 +658,27 @@ async def balance(ctx, user: discord.User = None) -> None:
         drawer.text((353, 636 - (ending_wins_lb_index - position) * 30), text=display_text, font=smallest_font, fill=fill_color)
 
     # Progress bars
-    upper_bar_length = 550 * max(0, min(1, (user_data[user_id]["total_points"] - config["roles_threshold"][member_rank]) / (config["roles_threshold"][next_rank] - config["roles_threshold"][member_rank] + 1)))
-    lower_bar_length = 550 * max(0, min(1, (user_data[user_id]["total_points"] - config["roles_threshold"][global_member_rank]) / (config["roles_threshold"][next_global_member_rank] - config["roles_threshold"][global_member_rank] + 1)))
-    drawer.text((670, 530), text=member_rank, font=smallest_font)
+    TOTAL_BAR_LENGTH = 545
+    upper_bar_length = TOTAL_BAR_LENGTH * max(0, min(1, (user_data[user_id]["total_points"] - config["roles_threshold"][member_rank]) / (config["roles_threshold"][next_rank] - config["roles_threshold"][member_rank] + 1)))
+    lower_bar_length = TOTAL_BAR_LENGTH * max(0, min(1, (user_data[user_id]["total_points"] - config["roles_threshold"][global_member_rank]) / (config["roles_threshold"][next_global_member_rank] - config["roles_threshold"][global_member_rank] + 1)))
+    drawer.text((675, 530), text=member_rank, font=smallest_font)
     drawer.text((1220 - smallest_font.getbbox(next_rank)[2], 530), text=next_rank, font=smallest_font)
-    drawer.text((670, 630), text=global_member_rank, font=smallest_font)
+    drawer.text((675, 630), text=global_member_rank, font=smallest_font)
     drawer.text((1220 - smallest_font.getbbox(next_global_member_rank)[2], 630), text=next_global_member_rank, font=smallest_font)
-    drawer.rounded_rectangle((670, 465, 670 + upper_bar_length, 525), fill=light_grey, radius=corner_radius / 4)
-    drawer.rounded_rectangle((670, 565, 670 + lower_bar_length, 625), fill=light_grey, radius=corner_radius / 4)
-    upper_percentage = round(upper_bar_length / 550 * 100, 1)
-    lower_percentage = round(lower_bar_length / 550 * 100, 1)
+    drawer.rounded_rectangle((675, 465, 670 + upper_bar_length, 525), fill=light_grey, radius=corner_radius / 4)
+    drawer.rounded_rectangle((675, 565, 670 + lower_bar_length, 625), fill=light_grey, radius=corner_radius / 4)
+    upper_percentage = round(upper_bar_length / TOTAL_BAR_LENGTH * 100, 1)
+    lower_percentage = round(lower_bar_length / TOTAL_BAR_LENGTH * 100, 1)
     upper_percentage_text = f"{upper_percentage}%"
     lower_percentage_text = f"{lower_percentage}%"
     if upper_percentage > 50:
         drawer.text((670 + upper_bar_length / 2 - smaller_font.getbbox(upper_percentage_text)[2] / 2, 492 - smaller_font.getbbox(upper_percentage_text)[3] / 2), text=upper_percentage_text, font=smaller_font, fill=dark_grey)
     else:
-        drawer.text((670 + 550 / 2 + upper_bar_length / 2 - smaller_font.getbbox(upper_percentage_text)[2] / 2, 491 - smaller_font.getbbox(upper_percentage_text)[3] / 2), text=upper_percentage_text, font=smaller_font)
+        drawer.text((670 + TOTAL_BAR_LENGTH / 2 + upper_bar_length / 2 - smaller_font.getbbox(upper_percentage_text)[2] / 2, 491 - smaller_font.getbbox(upper_percentage_text)[3] / 2), text=upper_percentage_text, font=smaller_font)
     if lower_percentage > 50:
         drawer.text((670 + lower_bar_length / 2 - smaller_font.getbbox(lower_percentage_text)[2] / 2, 592 - smaller_font.getbbox(lower_percentage_text)[3] / 2), text=lower_percentage_text, font=smaller_font, fill=dark_grey)
     else:
-        drawer.text((670 + 550 / 2 + lower_bar_length / 2 - smaller_font.getbbox(lower_percentage_text)[2] / 2, 592 - smaller_font.getbbox(lower_percentage_text)[3] / 2), text=lower_percentage_text, font=smaller_font)
+        drawer.text((670 + TOTAL_BAR_LENGTH / 2 + lower_bar_length / 2 - smaller_font.getbbox(lower_percentage_text)[2] / 2, 592 - smaller_font.getbbox(lower_percentage_text)[3] / 2), text=lower_percentage_text, font=smaller_font)
 
     progress_bar_img.save("cache_image_bal.png")
 
@@ -858,7 +859,7 @@ async def help_command(ctx) -> None:
 
 ############################################################### - STAFF-ONLY BOT COMMANDS - ###############################################################
 
-@bot.command(name="add")
+@bot.command(name="a")
 @commands.has_role(config["member_role"])
 @has_any_of_the_roles(config["staff_roles"])
 async def add_points(ctx, amount: int, user: discord.User) -> None:
