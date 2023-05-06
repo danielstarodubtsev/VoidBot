@@ -22,7 +22,7 @@
   "referral_threshold": 5000,
   "commander_threshold": 10000,
   "multiplier": 1.0,
-  "current_weekday": 1,
+  "current_weekday": 6,
   "current_month": 5,
   "roles_threshold": {
     "[I] Seeker - 1": 1,
