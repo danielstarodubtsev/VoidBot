@@ -1,7 +1,6 @@
 import json
 import os
 
-from discord_utils import DiscordUtils
 from utils import Utils
 
 class UserDataHandler:

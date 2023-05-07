@@ -20,9 +20,6 @@ Credit for help, ideas and suggestions:
 import json
 import math
 import os
-import random
-import string
-import typing
 
 from datetime import datetime, timezone
 from io import BytesIO
@@ -1020,6 +1017,7 @@ Total: {user_data[user_id]["total_points"]} -> {user_data[user_id]["total_points
 if __name__ == "__main__":
     user_data_handler = UserDataHandler()
     user_data_handler.load_data(config["user_data_file"])
+
     bot.run(config["token"])
 
 ############################################################### - TODO - ###############################################################
