@@ -4,6 +4,11 @@ import os
 from utils import Utils
 
 class UserDataHandler:
+    """
+    A class used for all work with the user data - points, wins, referral system, etc.
+    Stores data locally in json files
+    """
+
     def __init__(self):
         self._user_data = set()
         self._default_entry = {"weekly_points": 0,
@@ -35,32 +40,49 @@ class UserDataHandler:
             self._user_data = json.load(user_data_file)
 
     def save_data(self, file_name: str, indent: int = 2) -> None:
+        """
+        Saves the data to the given file
+        """
+
         with open(file_name, "w") as save_file:
             save_file.write(json.dumps(self._user_data, indent=indent))
 
     def is_in_database(self, id: int) -> bool:
+        """
+        Checks if an entry with the given ID exists
+        """
+
         return str(id) in self._user_data
     
     def get_user_info(self, id: int) -> dict:
+        """
+        Fetches the info assigned to the given ID
+        """
+
         if not self.is_in_database(id):
             raise Exception(f"User with id <{id}> isn't in the database")
         
         return self._user_data[str(id)]
     
     def get_attribute(self, id: int, attribute: str) -> object:
+        """
+        Fetches a praticular attribute of the given entry by ID
+        """
+
         return self.get_user_info(id)[attribute]
     
     def delete_entry(self, id: int) -> None:
+        """
+        Deletes an entry given by ID
+        """
+
         del self._user_data[str(id)]
 
-    def add_entry(self, id: int) -> None:
-        if self.is_in_database(id):
-            raise Exception("User with id <{id}> is already in the database")
-        
-        self._user_data[str(id)] = self._default_entry
-        self._reset_referral_code()
-
     def add_entry_if_needed(self, id: int) -> None:
+        """
+        Adds a new entry to the database
+        """
+
         if self.is_in_database(id):
             return
         
@@ -68,6 +90,10 @@ class UserDataHandler:
         self._reset_referral_code()
 
     def reset_entry(self, id: int) -> None:
+        """
+        Resets a given entry to a default one
+        """
+
         if not self.is_in_database(id):
             raise Exception("User with id <{id}> isn't in the database")
         
@@ -75,6 +101,10 @@ class UserDataHandler:
         self._reset_referral_code()
         
     def sort_database(self, by_attribute: str, reverse: bool = True) -> None:
+        """
+        Sortes the database by a given parameter
+        """
+
         sorted_user_data = list(self._user_data.items())
         sorted_user_data.sort(key=lambda elem: elem[1][by_attribute], reverse=reverse)
         sorted_user_data = {item[0]: item[1] for item in sorted_user_data}
@@ -82,14 +112,30 @@ class UserDataHandler:
         self._user_data = sorted_user_data
 
     def reset_attribute(self, attribute: str) -> None:
+        """
+        Resets a particular attribute for all entries of the database
+        """
+
         for id in self._user_data:
             self._user_data[id] = self._default_entry[attribute]
 
     def set_attribute(self, id: int, attribute: str, value: object) -> None:
+        """
+        Sets a particular attribute to a particular value
+        """
+
         self._user_data[str(id)][attribute] = value
 
     def list_ids(self) -> list[str]:
+        """
+        Returnes the list of all ID's in the order they appear in the database
+        """
+
         return [int(id) for id in self._user_data]
     
     def get_number_of_entries(self) -> int:
+        """
+        Returnes the total number of entries in the database
+        """
+        
         return len(self._user_data)
