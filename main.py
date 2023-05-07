@@ -27,6 +27,11 @@ import typing
 from datetime import datetime, timezone
 from io import BytesIO
 
+from config_handler import ConfigHandler
+from discord_utils import DiscordUtils
+from user_data_handler import UserDataHandler
+from utils import Utils
+
 import discord
 import requests
 
@@ -47,96 +52,28 @@ bot = commands.Bot(command_prefix=config["command_prefix"], intents=discord.Inte
 
 ############################################################### - UTIL FUNCTIONS - ###############################################################
 
-def load_user_data(user_data_file_name: str) -> dict:
-    """
-    Loads the user data from the given file
-    """
-    
-    # If the user data file doesn't exist we create it and fill with an empty json object
-    if not os.path.exists(f"./{user_data_file_name}"):
-        with open(user_data_file_name, "w") as user_data_file:
-            user_data_file.write(json.dumps(dict(), indent=2))
-    
-    # Read the data from json file
-    with open(user_data_file_name) as user_data_file:
-        user_data = json.load(user_data_file)
-
-    return user_data
-
 def save_data(save_user_data: bool = True, save_config: bool = True) -> None:
     """
     Saves all the data to json files
     """
 
     if save_user_data:
-        with open(config["user_data_file"], "w") as user_data_file:
-            user_data_file.write(json.dumps(user_data, indent=2))
+        user_data_handler.save_data(config["user_data_file"])
 
     if save_config:
         with open(CONFIG_FILE, "w") as config_file:
             config_file.write(json.dumps(config, indent=2))
-
-def sort_user_data(user_data: dict, by: str, reverse: bool = True) -> dict:
-    """
-    Returns the sorted user_data
-    """
-
-    sorted_user_data = list(user_data.items())
-    sorted_user_data.sort(key=lambda elem: elem[1][by], reverse=reverse)
-    sorted_user_data = {elem[0]: elem[1] for elem in sorted_user_data}
-
-    return sorted_user_data
-
-def init_user_if_needed(user_id: str) -> None:
-    """
-    Adds a new user to the user_data if it doesn't already exist
-    """
-
-    if user_id in user_data:
-        return
-
-    user_data[user_id] = {"weekly_points": 0,
-                            "monthly_points": 0,
-                            "total_points": 0,
-                            "weekly_wins": 0,
-                            "monthly_wins": 0,
-                            "total_wins": 0,
-                            "referral_code": generate_referral_code(),
-                            "referrals": [],
-                            "commander": None,
-                            "unlocked_achievements": []}
-
-    save_data(save_config=False)
-
-def reset_leaderboard(leaderboard_type: str) -> None:
-    """
-    Resets a particular leaderboard
-    """
-
-    if leaderboard_type == "weekly":
-        for user_id in user_data:
-            user_data[user_id]["weekly_points"] = 0
-            user_data[user_id]["weekly_wins"] = 0
-
-    elif leaderboard_type == "monthly":
-        for user_id in user_data:
-            user_data[user_id]["monthly_points"] = 0
-            user_data[user_id]["monthly_wins"] = 0
-
-    elif leaderboard_type == "total":
-        for user_id in user_data:
-            user_data[user_id]["total_points"] = 0
-            user_data[user_id]["total_wins"] = 0
-
-    save_data(save_config=False)
 
 def create_embed_for_top(top: int, by: str, title: str) -> discord.Embed:
     """
     Returnes a discord.Embed object for the given top
     """
 
-    leaderboard = [user_info for user_info in list(sort_user_data(user_data=user_data, by=by).items()) if bot.get_guild(config["server_id"]).get_member(int(user_info[0]))][:top]
-    leaderboard = {elem[0]: elem[1] for elem in leaderboard}
+    guild = bot.get_guild(config["server_id"])
+
+    user_data_handler.sort_database(by)
+    ids = [id for id in user_data_handler.list_ids() if DiscordUtils.is_user_in_guild(id, guild)][:top]
+    leaderboard = {id: user_data_handler.get_user_info(id) for id in ids}
 
     embed_text = ""
     for index, user_id in enumerate(leaderboard, start=1):
@@ -156,45 +93,6 @@ def create_embed_for_top(top: int, by: str, title: str) -> discord.Embed:
 
     return discord.Embed(color=discord.Color.blue(), title=title, description=embed_text)
 
-def generate_referral_code(length: int = 10) -> str:
-    """
-    Generates a new random referral code of given length
-    """
-
-    symbols = string.ascii_lowercase + string.ascii_uppercase + string.digits
-    code = "".join([random.choice(symbols) for _ in range(length)])
-
-    return code
-
-def has_any_of_the_roles(role_names: list[str]):
-    """
-    Decorator that checks whether the message author has any of the listed roles
-    """
-
-    async def predicate(ctx) -> bool:
-        return bool({role.name for role in ctx.author.roles} & set(role_names))
-    
-    return commands.check(predicate)
-
-def update_achievements(user: discord.User) -> list[str]:
-    """
-    Updates users achievements and returns the new achievements obtained by the user
-    """
-
-    user_id = str(user.id)
-    
-    return []
-
-def shorten_string(string: str, max_length: int) -> str:
-    """
-    If the string is longer than max_length, shortens it and adds dots in the end of the string
-    """
-
-    if len(string) <= max_length:
-        return string
-    
-    return string[:max_length - 2] + ".."
-
 def get_member_rank(member: discord.Member) -> str:
     """
     Returns the name of the member's role that represents the member's rank
@@ -213,16 +111,9 @@ def get_ranks_list() -> list[str]:
 
     return list(config["roles_threshold"].keys())
 
-def is_same_global_rank(rank1: str, rank2: str) -> bool:
-    """
-    [IX] Living Legend - 2 is same global rank as [IX] Living Legend - 4 but not same as [VI] Master - 1
-    """
-
-    return rank1.split(" - ")[0] == rank2.split(" - ")[0]
-
 ############################################################### - NON-COMMAND ASYNC FUNCTIONS - ###############################################################
 
-async def update_rank(ctx, user: discord.User) -> str:
+async def update_user(ctx, user: discord.User) -> str:
     """
     Updates user's rank. Returns the new rank if it was changed
     """
@@ -230,13 +121,15 @@ async def update_rank(ctx, user: discord.User) -> str:
     all_rank_roles = [role for role in ctx.guild.roles if role.name in config["roles_threshold"]]
     all_rank_roles.sort(key=lambda role: config["roles_threshold"][role.name])
 
+    total_points = user_data_handler.get_attribute(user.id, "total_points")
+
     for rank in all_rank_roles:
-        if user_data[str(user.id)]["total_points"] >= config["roles_threshold"][rank.name]:
+        if total_points >= config["roles_threshold"][rank.name]:
             new_role = rank
 
     member = ctx.guild.get_member(user.id)
 
-    if user_data[str(user.id)]["total_points"] < min(list(config["roles_threshold"].values())):
+    if total_points < min(list(config["roles_threshold"].values())):
         return
 
     for rank in all_rank_roles:
@@ -245,22 +138,12 @@ async def update_rank(ctx, user: discord.User) -> str:
 
     for role_name in config["other_roles_threshold"]:
         role = [role for role in ctx.guild.roles if role.name == role_name].pop()
-        if user_data[str(user.id)]["total_points"] >= config["other_roles_threshold"][role_name] and role not in member.roles:
+        if total_points >= config["other_roles_threshold"][role_name] and role not in member.roles:
             await member.add_roles(role)
 
     if new_role not in member.roles:
         await member.add_roles(new_role)
         return new_role.name
-
-async def update_user(ctx, user: discord.User) -> typing.Tuple[str, list[str]]:
-    """
-    Updates user's ranks and achievements, returnes new rank and the list of all new achievements
-    """
-
-    new_rank = await update_rank(ctx, user)
-    new_achievements = update_achievements(user)
-
-    return new_rank, new_achievements
 
 async def reset_leaderboards_if_needed() -> None:
     """
@@ -276,14 +159,16 @@ async def reset_leaderboards_if_needed() -> None:
         config["current_weekday"] = current_weekday
         if current_weekday == 1:
             await send_leaderboard_summary(leaderboard_type="weekly_points")
-            reset_leaderboard(leaderboard_type="weekly")
+            user_data_handler.reset_attribute("weekly_points")
+            user_data_handler.reset_attribute("weekly_wins")
         
         await backup_data()
 
     if current_month != config["current_month"]:
         config["current_month"] = current_month
         await send_leaderboard_summary(leaderboard_type="monthly_points")
-        reset_leaderboard(leaderboard_type="monthly")
+        user_data_handler.reset_attribute("monthly_points")
+        user_data_handler.reset_attribute("monthly_wins")
 
     save_data(save_user_data=False)
 
@@ -308,43 +193,56 @@ async def manipulate_points(ctx, amounts: list[float], users: list[discord.User]
     result_amounts = []
     for amount, user in zip(amounts, users):
         user_id = str(user.id)
-        member = ctx.guild.get_member(int(user_id))
+        member = ctx.guild.get_member(user.id)
 
-        if user_data[user_id]["weekly_points"] + amount < 0 or user_data[user_id]["monthly_points"] + amount < 0:
+        old_weekly_points = user_data_handler.get_attribute(user.id, "weekly_points")
+        old_monthly_points = user_data_handler.get_attribute(user.id, "monthly_points")
+        old_total_points = user_data_handler.get_attribute(user.id, "total_points")
+
+        old_weekly_wins = user_data_handler.get_attribute(user.id, "weekly_wins")
+        old_monthly_wins = user_data_handler.get_attribute(user.id, "monthly_wins")
+        old_total_wins = user_data_handler.get_attribute(user.id, "total_wins")
+
+        amount_with_mult = math.ceil(amount * config["multiplier"] if amount > 0 else amount)
+
+        new_weekly_points = old_weekly_points + amount_with_mult
+        new_monthly_points = old_monthly_points + amount_with_mult
+        new_total_points = old_total_points + amount_with_mult
+
+        if new_weekly_points < 0 or new_monthly_points < 0 or new_total_points < 0:
             await show_message(ctx=ctx, message_title="Error!", message_text="Negative points are not allowed")
             return
 
-        amount_with_mult = math.ceil(amount * config["multiplier"] if amount > 0 else amount)
         result_amounts.append(amount_with_mult)
 
         value += f"""{"Added" if amount_with_mult >= 0 else "Removed"} **{abs(amount_with_mult)}** points {"to" if amount_with_mult >= 0 else "from"} {member.display_name}
-**Weekly: {user_data[user_id]["weekly_points"]} -> {user_data[user_id]["weekly_points"] + amount_with_mult}
-Monthly: {user_data[user_id]["monthly_points"]} -> {user_data[user_id]["monthly_points"] + amount_with_mult}
-Total: {user_data[user_id]["total_points"]} -> {user_data[user_id]["total_points"] + amount_with_mult}**\n"""
+**Weekly: {old_weekly_points} -> {new_weekly_points}
+Monthly: {old_monthly_points} -> {new_monthly_points}
+Total: {old_total_points} -> {new_total_points}**\n"""
 
-        user_data[user_id]["weekly_points"] += amount_with_mult
-        user_data[user_id]["monthly_points"] += amount_with_mult
-        user_data[user_id]["total_points"] += amount_with_mult
+        user_data_handler.set_attribute(user.id, "weekly_points", new_weekly_points)
+        user_data_handler.set_attribute(user.id, "monthly_points", new_monthly_points)
+        user_data_handler.set_attribute(user.id, "total_points", new_total_points)
 
-        if user_data[user_id]["total_points"] >= config["commander_threshold"]:
-            commander_id = user_data[user_id]["commander"]
+        if new_total_points >= config["commander_threshold"]:
+            commander_id = user_data_handler.get_attribute(user.id, "commander")
 
             if commander_id:
-                user_data[user_id]["commander"] = None
-                user_data[commander_id]["referrals"].remove(user_id)
+                referrals = user_data_handler.get_attribute(int(commander_id), "referrals")
+                referrals.remove(user_id)
+                user_data_handler.set_attribute(user.id, "commander", None)
+                user_data_handler.set_attribute(int(commander_id), "referrals", referrals)
 
         if abs(amount) >= 10:
-            user_data[user_id]["weekly_wins"] += amount / abs(amount)
-            user_data[user_id]["monthly_wins"] += amount / abs(amount)
-            user_data[user_id]["total_wins"] += amount / abs(amount)
+            user_data_handler.set_attribute(user.id, "weekly_wins", old_weekly_wins + amount / abs(amount))
+            user_data_handler.set_attribute(user.id, "monthly_wins", old_monthly_wins + amount / abs(amount))
+            user_data_handler.set_attribute(user.id, "total_wins", old_total_wins + amount / abs(amount))
 
-        new_rank, new_achievements = await update_user(ctx, user)
+        new_rank = await update_user(ctx, user)
         save_data(save_config=False)
         
         if new_rank:
             value += f"{member.display_name} ranked {'up' if amount_with_mult > 0 else 'down'} to {new_rank}\n"
-        if new_achievements:
-            pass
 
     with open("points_logs.txt", "r") as points_logs_file:
         lines = (points_logs_file.readlines() + [f"{[user.id for user in users]} - {result_amounts}\n"])[-500:]
@@ -367,7 +265,7 @@ async def backup_data() -> None:
 Date: {current_datetime.date()}
 Time: {current_datetime.time()}
 Size: {os.stat(config["user_data_file"]).st_size} bytes
-Total Members: {len(user_data)}```"""
+Total Members: {user_data_handler.get_number_of_entries()}```"""
 
     await backup_channel.send(summary, file=discord.File(config["user_data_file"]))
 
@@ -380,9 +278,10 @@ async def send_leaderboard_summary(leaderboard_type: str) -> None:
     channel = bot.get_channel(config["backup_channel_id"])
     current_datetime = datetime.now(timezone.utc)
 
-    data = sort_user_data(user_data=user_data, by=leaderboard_type)
-    data = [id for id in data if user_data[id][leaderboard_type] > 0 and guild.get_member(int(id))]
-    file_lines = [f"{index}. {guild.get_member(int(id)).display_name} - {user_data[id][leaderboard_type]}" for index, id in enumerate(data, start=1)]
+    user_data_handler.sort_database(leaderboard_type)
+
+    data = [id for id in user_data_handler.list_ids() if user_data_handler.get_attribute(id, leaderboard_type) > 0 and DiscordUtils.is_user_in_guild(id, guild)]
+    file_lines = [f"{index}. {guild.get_member(int(id)).display_name} - {user_data_handler.get_attribute(id, leaderboard_type)}" for index, id in enumerate(data, start=1)]
 
     with open("cache_leaderboard_summary.txt", "w", encoding="utf-8") as cache_leaderboard_summary_file:
         cache_leaderboard_summary_file.write("\n".join(file_lines))
@@ -428,15 +327,15 @@ async def give_points(ctx, amount: int) -> None:
     Gives the user who ran the command a certain amount of points
     """
 
-    user_id = str(ctx.author.id)
-    init_user_if_needed(user_id=user_id)
+    user_id = ctx.author.id
+    user_data_handler.add_entry_if_needed(user_id)
 
     if amount <= 0:
         await show_message(ctx=ctx, message_title="Error!", message_text="Only positive values are allowed")
         return
 
-    if user_data[user_id]["commander"]:
-        commander = bot.get_user(int(user_data[user_id]["commander"]))
+    if user_data_handler.get_attribute(user_id, "commander"):
+        commander = bot.get_user(int(user_data_handler.get_attribute(user_id, "commander")))
         await manipulate_points(ctx=ctx, amounts=[1.1 * amount, .1 * amount], users=[ctx.author, commander])
         return
 
@@ -458,17 +357,16 @@ async def contest_give(ctx, amount: int, *users: discord.User) -> None:
     result_users = []
 
     for index, user in enumerate(users):
-        user_id = str(user.id)
-        init_user_if_needed(user_id=user_id)
+        user_data_handler.add_entry_if_needed(user.id)
 
-        if not user_data[user_id]["commander"]:
+        if not user_data_handler.get_attribute(user.id, "commander"):
             amounts.append(amount * percentages[index])
             result_users.append(user)
         else:
             amounts.append(amount * percentages[index] * 1.1)
             amounts.append(amount * percentages[index] * .1)
             result_users.append(user)
-            result_users.append(bot.get_user(int(user_data[user_id]["commander"])))
+            result_users.append(bot.get_user(int(user_data_handler.get_attribute(user.id, "commander"))))
 
     await reset_leaderboards_if_needed()
 
@@ -490,17 +388,16 @@ async def distribute_points(ctx, amount: int, *users: discord.User) -> None:
     result_users = []
 
     for index, user in enumerate(users):
-        user_id = str(user.id)
-        init_user_if_needed(user_id=user_id)
+        user_data_handler.add_entry_if_needed(user.id)
 
-        if not user_data[user_id]["commander"]:
+        if not user_data_handler.get_attribute(user.id, "commander"):
             amounts.append(amount * percentages[index])
             result_users.append(user)
         else:
             amounts.append(amount * percentages[index] * 1.1)
             amounts.append(amount * percentages[index] * .1)
             result_users.append(user)
-            result_users.append(bot.get_user(int(user_data[user_id]["commander"])))
+            result_users.append(bot.get_user(int(user_data_handler.get_attribute(user.id, "commander"))))
 
     await reset_leaderboards_if_needed()
 
@@ -533,10 +430,12 @@ async def balance(ctx, user: discord.User = None) -> None:
     if user is None:
         user = bot.get_user(ctx.author.id)
 
-    user_id = str(user.id)
-    init_user_if_needed(user_id=user_id)
+    guild = bot.get_guild(config["server_id"])
 
-    member = ctx.guild.get_member(int(user_id))
+    user_id = user.id
+    user_data_handler.add_entry_if_needed(user.id)
+
+    member = ctx.guild.get_member(user_id)
     member_rank = get_member_rank(member)
 
     if member_rank != get_ranks_list()[-1]:
@@ -547,7 +446,7 @@ async def balance(ctx, user: discord.User = None) -> None:
     global_member_rank = member_rank.replace("2", "1").replace("3", "1").replace("4", "1").replace("5", "1")
     if global_member_rank not in get_ranks_list()[-5:]:
         for rank in get_ranks_list()[get_ranks_list().index(global_member_rank):]:
-            if not is_same_global_rank(global_member_rank, rank):
+            if not Utils.is_same_global_rank(global_member_rank, rank):
                 next_global_member_rank = rank
                 break
     else:
@@ -572,21 +471,27 @@ async def balance(ctx, user: discord.User = None) -> None:
     image_data = requests.get(guild_icon_url).content
     guild_icon_image = Image.open(BytesIO(image_data)).resize((35, 35))
 
-    weekly_points = user_data[user_id]["weekly_points"]
-    monthly_points = user_data[user_id]["monthly_points"]
-    total_points = user_data[user_id]["total_points"]
+    weekly_points = user_data_handler.get_attribute(user_id, "weekly_points")
+    monthly_points = user_data_handler.get_attribute(user_id, "monthly_points")
+    total_points = user_data_handler.get_attribute(user_id, "total_points")
 
-    weekly_points_place = [user_info[0] for user_info in list(sort_user_data(user_data=user_data, by="weekly_points").items()) if bot.get_user(int(user_info[0]))].index(user_id) + 1
-    monthly_points_place = [user_info[0] for user_info in list(sort_user_data(user_data=user_data, by="monthly_points").items()) if bot.get_user(int(user_info[0]))].index(user_id) + 1
-    total_points_place = [user_info[0] for user_info in list(sort_user_data(user_data=user_data, by="total_points").items()) if bot.get_user(int(user_info[0]))].index(user_id) + 1
+    weekly_wins = int(user_data_handler.get_attribute(user_id, "weekly_wins"))
+    monthly_wins = int(user_data_handler.get_attribute(user_id, "monthly_wins"))
+    total_wins = int(user_data_handler.get_attribute(user_id, "total_wins"))
 
-    weekly_wins = int(user_data[user_id]["weekly_wins"])
-    monthly_wins = int(user_data[user_id]["monthly_wins"])
-    total_wins = int(user_data[user_id]["total_wins"])
+    user_data_handler.sort_database("weekly_points")
+    weekly_points_place = [id for id in user_data_handler.list_ids() if DiscordUtils.is_user_in_guild(id, guild)].index(user_id) + 1
+    user_data_handler.sort_database("monthly_points")
+    monthly_points_place = [id for id in user_data_handler.list_ids() if DiscordUtils.is_user_in_guild(id, guild)].index(user_id) + 1
+    user_data_handler.sort_database("total_points")
+    total_points_place = [id for id in user_data_handler.list_ids() if DiscordUtils.is_user_in_guild(id, guild)].index(user_id) + 1
 
-    weekly_wins_place = list(sort_user_data(user_data=user_data, by="weekly_wins").keys()).index(user_id) + 1
-    monthly_wins_place = list(sort_user_data(user_data=user_data, by="monthly_wins").keys()).index(user_id) + 1
-    total_wins_place = list(sort_user_data(user_data=user_data, by="total_wins").keys()).index(user_id) + 1
+    user_data_handler.sort_database("weekly_wins")
+    weekly_wins_place = [id for id in user_data_handler.list_ids() if DiscordUtils.is_user_in_guild(id, guild)].index(user_id) + 1
+    user_data_handler.sort_database("monthly_wins")
+    monthly_wins_place = [id for id in user_data_handler.list_ids() if DiscordUtils.is_user_in_guild(id, guild)].index(user_id) + 1
+    user_data_handler.sort_database("total_wins")
+    total_wins_place = [id for id in user_data_handler.list_ids() if DiscordUtils.is_user_in_guild(id, guild)].index(user_id) + 1
 
     weekly_points_summary = f"{weekly_points} (#{weekly_points_place})"
     monthly_points_summary = f"{monthly_points} (#{monthly_points_place})"
@@ -605,16 +510,14 @@ async def balance(ctx, user: discord.User = None) -> None:
     monthly_wins_text_size = (smaller_font.getbbox(monthly_wins_summary)[2], smaller_font.getbbox(monthly_wins_summary)[3])
     total_wins_text_size = (smaller_font.getbbox(total_wins_summary)[2], smaller_font.getbbox(total_wins_summary)[3])
 
-    points_lb = [user_info for user_info in list(sort_user_data(user_data=user_data, by="total_points").items()) if bot.get_user(int(user_info[0]))]
-    points_lb = {elem[0]: elem[1] for elem in points_lb}
-    points_keys = list(points_lb.keys())
+    user_data_handler.sort_database("total_points")
+    points_keys = [id for id in user_data_handler.list_ids() if DiscordUtils.is_user_in_guild(id, guild)]
     points_user_pos = points_keys.index(user_id)
     starting_points_lb_index = max(0, points_user_pos - 3)
     ending_points_lb_index = min(starting_points_lb_index + 6, len(points_keys) - 1)
 
-    wins_lb = [user_info for user_info in list(sort_user_data(user_data=user_data, by="total_wins").items()) if bot.get_user(int(user_info[0]))]
-    wins_lb = {elem[0]: elem[1] for elem in wins_lb}
-    wins_keys = list(wins_lb.keys())
+    user_data_handler.sort_database("total_wins")
+    wins_keys = [id for id in user_data_handler.list_ids() if DiscordUtils.is_user_in_guild(id, guild)]
     wins_user_pos = wins_keys.index(user_id)
     starting_wins_lb_index = max(0, wins_user_pos - 3)
     ending_wins_lb_index = min(starting_wins_lb_index + 6, len(wins_keys) - 1)
@@ -682,7 +585,7 @@ async def balance(ctx, user: discord.User = None) -> None:
     # Points leaderboard
     for position in range(ending_points_lb_index, starting_points_lb_index - 1, -1):
         current_member = bot.get_guild(config["server_id"]).get_member(int(points_keys[position]))
-        display_text = f"{position + 1}. {shorten_string(current_member.display_name, 20)}: {user_data[str(current_member.id)]['total_points']}"
+        display_text = f"{position + 1}. {Utils.shorten_string(current_member.display_name, 20)}: {user_data_handler.get_attribute(current_member.id, 'total_points')}"
 
         fill_color = (166, 166, 166, 255) if position != points_user_pos else (255, 255, 255, 255)
         drawer.text((43, 636 - (ending_points_lb_index - position) * 30), text=display_text, font=smallest_font, fill=fill_color)
@@ -690,21 +593,21 @@ async def balance(ctx, user: discord.User = None) -> None:
     # Wins leaderboard
     for position in range(ending_wins_lb_index, starting_wins_lb_index - 1, -1):
         current_member = bot.get_guild(config["server_id"]).get_member(int(wins_keys[position]))
-        display_text = f"{position + 1}. {shorten_string(current_member.display_name, 20)}: {int(user_data[str(current_member.id)]['total_wins'])}"
+        display_text = f"{position + 1}. {Utils.shorten_string(current_member.display_name, 20)}: {user_data_handler.get_attribute(current_member.id, 'total_wins')}"
 
         fill_color = (166, 166, 166, 255) if position != wins_user_pos else (255, 255, 255, 255)
         drawer.text((353, 636 - (ending_wins_lb_index - position) * 30), text=display_text, font=smallest_font, fill=fill_color)
 
     # Progress bars
     TOTAL_BAR_LENGTH = 545
-    upper_bar_length = TOTAL_BAR_LENGTH * max(0, min(1, (user_data[user_id]["total_points"] - config["roles_threshold"][member_rank]) / (config["roles_threshold"][next_rank] - config["roles_threshold"][member_rank] + 1)))
-    lower_bar_length = TOTAL_BAR_LENGTH * max(0, min(1, (user_data[user_id]["total_points"] - config["roles_threshold"][global_member_rank]) / (config["roles_threshold"][next_global_member_rank] - config["roles_threshold"][global_member_rank] + 1)))
+    upper_bar_length = TOTAL_BAR_LENGTH * max(0, min(1, (user_data_handler.get_attribute(user_id, 'total_points') - config["roles_threshold"][member_rank]) / (config["roles_threshold"][next_rank] - config["roles_threshold"][member_rank] + 1)))
+    lower_bar_length = TOTAL_BAR_LENGTH * max(0, min(1, (user_data_handler.get_attribute(user_id, 'total_points') - config["roles_threshold"][global_member_rank]) / (config["roles_threshold"][next_global_member_rank] - config["roles_threshold"][global_member_rank] + 1)))
     drawer.text((675, 530), text=member_rank, font=smallest_font)
     drawer.text((1220 - smallest_font.getbbox(next_rank)[2], 530), text=next_rank, font=smallest_font)
     drawer.text((675, 630), text=global_member_rank, font=smallest_font)
     drawer.text((1220 - smallest_font.getbbox(next_global_member_rank)[2], 630), text=next_global_member_rank, font=smallest_font)
-    drawer.rounded_rectangle((675, 465, 670 + upper_bar_length, 525), fill=light_grey, radius=corner_radius / 4)
-    drawer.rounded_rectangle((675, 565, 670 + lower_bar_length, 625), fill=light_grey, radius=corner_radius / 4)
+    drawer.rounded_rectangle((675, 465, 675 + upper_bar_length, 525), fill=light_grey, radius=corner_radius / 4)
+    drawer.rounded_rectangle((675, 565, 675 + lower_bar_length, 625), fill=light_grey, radius=corner_radius / 4)
     upper_percentage = round(upper_bar_length / TOTAL_BAR_LENGTH * 100, 1)
     lower_percentage = round(lower_bar_length / TOTAL_BAR_LENGTH * 100, 1)
     upper_percentage_text = f"{upper_percentage}%"
@@ -769,15 +672,13 @@ async def leaderboard(ctx, user: discord.User = None) -> None:
     if not user:
         user = bot.get_user(ctx.author.id)
 
-    user_id = str(user.id)
-    lb = [user_info for user_info in list(sort_user_data(user_data=user_data, by="total_points").items()) if bot.get_user(int(user_info[0]))]
-    lb = {elem[0]: elem[1] for elem in lb}
-    keys = list(lb.keys())
-    user_pos = keys.index(user_id)
+    user_data_handler.sort_database("total_points")
+    keys = [id for id in user_data_handler.list_ids() if DiscordUtils.is_user_in_guild(id, ctx.guild)]
+    user_pos = keys.index(user.id)
 
     embed_text = ""
     for pos in range(user_pos + 4, user_pos - 6, -1):
-        if not 0 <= pos < len(lb):
+        if not 0 <= pos < len(keys):
             continue
 
         if pos + 1 == 1:
@@ -792,9 +693,9 @@ async def leaderboard(ctx, user: discord.User = None) -> None:
         member = bot.get_guild(config["server_id"]).get_member(int(keys[pos]))
 
         if pos == user_pos:
-            embed_text = f"**{place} {member.display_name}: :coin: {lb[keys[pos]]['total_points']}**\n" + embed_text
+            embed_text = f"**{place} {member.display_name}: :coin: {user_data_handler.get_attribute(keys[pos], 'total_points')}**\n" + embed_text
         else:
-            embed_text = f"{place} {member.display_name}: :coin: {lb[keys[pos]]['total_points']}\n" + embed_text
+            embed_text = f"{place} {member.display_name}: :coin: {user_data_handler.get_attribute(keys[pos], 'total_points')}\n" + embed_text
 
     embed = discord.Embed(title="Leaderboard", color=discord.Color.blue(), description=embed_text)
 
@@ -810,10 +711,10 @@ async def get_referral_code(ctx, user: discord.User = None) -> None:
     if not user:
         user = bot.get_user(ctx.author.id)
 
-    user_id = str(user.id)
-    code = user_data[user_id]["referral_code"]
+    code = user_data_handler.get_attribute(user.id, "referral_code")
+    total_points = user_data_handler.get_attribute(user.id, "total_points")
 
-    if user_data[user_id]["total_points"] < config["commander_threshold"]:
+    if total_points < config["commander_threshold"]:
         await show_message(ctx=ctx, message_title="Error!", message_text=f"You need to earn at least {config['commander_threshold']} points before a referral code is assigned to you")
         return
     
@@ -826,18 +727,25 @@ async def use_referral_code(ctx, code: str) -> None:
     Allows a user to use a referral code, if possible
     """
 
-    user_id = str(ctx.author.id)
-    init_user_if_needed(user_id=user_id)
+    user_id = ctx.author.id
+    user_data_handler.add_entry_if_needed(user_id)
 
-    if user_data[user_id]["total_points"] >= config["referral_threshold"]:
+    total_points = user_data_handler.get_attribute(user_id, "total_points")
+
+    if total_points >= config["referral_threshold"]:
         await show_message(ctx=ctx, message_title="Error!", message_text=f"You can only use a referral code if you have less than {config['referral_threshold']} points")
         return
     
-    for possible_commander_id in user_data:
-        if user_data[possible_commander_id]["referral_code"] == code:
-            if user_id not in user_data[possible_commander_id]["referrals"]:
-                user_data[possible_commander_id]["referrals"].append(user_id)
-            user_data[user_id]["commander"] = possible_commander_id
+    for possible_commander_id in user_data_handler.list_ids():
+        referral_code = user_data_handler.get_attribute(possible_commander_id, "referral_code")
+        referrals = user_data_handler.get_attribute(possible_commander_id, "referrals")
+
+        if referral_code == code:
+            if user_id not in referrals:
+                referrals.append(str(user_id))
+                user_data_handler.set_attribute(possible_commander_id, "referrals", referrals)
+
+            user_data_handler.set_attribute(user_id, "commander", possible_commander_id)
             save_data(save_config=False)
             await show_message(ctx=ctx, message_title="Success!", message_text=f"Now {ctx.guild.get_member(int(possible_commander_id)).display_name} is your commander")
             break
@@ -855,9 +763,7 @@ async def get_user_referrals(ctx, user: discord.User = None) -> None:
     if user is None:
         user = bot.get_user(ctx.author.id)
 
-    user_id = str(user.id)
-
-    referrals = [ctx.guild.get_member(int(referral_id)).display_name for referral_id in user_data[user_id]["referrals"] if ctx.guild.get_member(int(referral_id))]
+    referrals = [ctx.guild.get_member(int(referral_id)).display_name for referral_id in user_data_handler.get_attribute(user.id, "referrals") if ctx.guild.get_member(int(referral_id))]
 
     if referrals:
         await show_message(ctx=ctx, message_title="Success!", message_text=f"The referrals are {', '.join(referrals)}")
@@ -888,8 +794,6 @@ async def help_command(ctx) -> None:
 {config["command_prefix"]}a (points) (user) - gives the user a certain amount of points
 {config["command_prefix"]}r (points) (user) - removes a certain amount of points from the user
 {config["command_prefix"]}mult (multiplier) - sets the points multiplier
-{config["command_prefix"]}rwp (amount) (user) - removes weekly points from the user (doesn't affect monthly/total points)
-{config["command_prefix"]}rmp (amount) (user) - removes monthly points from the user (doesn't affect weekly/total points)
 {config["command_prefix"]}undo - revertes the last points-related command used by any user (except rwp and rmp commands)"""
 
     embed = discord.Embed(title="All VoidBot commands", color=discord.Color.dark_gold(), description=help_text)
@@ -899,21 +803,21 @@ async def help_command(ctx) -> None:
 
 @bot.command(name="a")
 @commands.has_role(config["member_role"])
-@has_any_of_the_roles(config["staff_roles"])
+@DiscordUtils.has_any_of_the_roles(config["staff_roles"])
 async def add_points(ctx, amount: int, user: discord.User) -> None:
     """
     Adds a certain amount of points to any user
     """
 
-    user_id = str(user.id)
-    init_user_if_needed(user_id=user_id)
+    user_data_handler.add_entry_if_needed(user.id)
 
     if amount <= 0:
         await show_message(ctx=ctx, message_title="Error!", message_text="Only positive values are allowed")
         return
 
-    if user_data[user_id]["commander"]:
-        commander = bot.get_user(int(user_data[user_id]["commander"]))
+    commander_id = user_data_handler.get_attribute(user.id, "commander")
+    if commander_id:
+        commander = bot.get_user(int(commander_id))
         await manipulate_points(ctx=ctx, amounts=[1.1 * amount, .1 * amount], users=[user, commander])
         return
 
@@ -921,7 +825,7 @@ async def add_points(ctx, amount: int, user: discord.User) -> None:
 
 @bot.command(name="r")
 @commands.has_role(config["member_role"])
-@has_any_of_the_roles(config["staff_roles"])
+@DiscordUtils.has_any_of_the_roles(config["staff_roles"])
 async def remove_points(ctx, amount: int, user: discord.User) -> None:
     """
     Removes a certain amount of points from any user
@@ -935,7 +839,7 @@ async def remove_points(ctx, amount: int, user: discord.User) -> None:
 
 @bot.command(name="mult")
 @commands.has_role(config["member_role"])
-@has_any_of_the_roles(config["staff_roles"])
+@DiscordUtils.has_any_of_the_roles(config["staff_roles"])
 async def set_multiplier(ctx, multiplier: float) -> None:
     """
     Sets a point multiplier (for 2x events etc.)
@@ -950,67 +854,9 @@ async def set_multiplier(ctx, multiplier: float) -> None:
     config["multiplier"] = multiplier
     save_data(save_user_data=False)
 
-@bot.command(name="rwp")
-@commands.has_role(config["member_role"])
-@has_any_of_the_roles(config["staff_roles"])
-async def remove_weekly_points(ctx, amount: int, user: discord.User) -> None:
-    """
-    Removes weekly points from user. Doesn't affect monthly/total points
-    """
-
-    user_id = str(user.id)
-
-    await reset_leaderboards_if_needed()
-
-    if amount > user_data[user_id]["weekly_points"]:
-        await show_message(ctx=ctx, message_title="Error!", message_text="The user doesn't have enough points")
-        return
-
-    member = ctx.guild.get_member(user.id)
-
-    embed_text = f"""Removed **{amount}** weekly points from {member.display_name}
-**Weekly: {user_data[user_id]["weekly_points"]} -> {user_data[user_id]["weekly_points"] - amount}
-Monthly: {user_data[user_id]["monthly_points"]} -> {user_data[user_id]["monthly_points"]}
-Total: {user_data[user_id]["total_points"]} -> {user_data[user_id]["total_points"]}**"""
-
-    user_data[user_id]["weekly_points"] -= amount
-
-    embed = discord.Embed(color=discord.Color.green(), title=member.display_name, description=embed_text)
-
-    await ctx.send(embed=embed)
-
-@bot.command(name="rmp")
-@commands.has_role(config["member_role"])
-@has_any_of_the_roles(config["staff_roles"])
-async def remove_monthly_points(ctx, amount: int, user: discord.User) -> None:
-    """
-    Removes monthly points from user. Doesn't affect weekly/total points
-    """
-
-    user_id = str(user.id)
-
-    await reset_leaderboards_if_needed()
-
-    if amount > user_data[user_id]["monthly_points"]:
-        await show_message(ctx=ctx, message_title="Error!", message_text="The user doesn't have enough points")
-        return
-
-    member = ctx.guild.get_member(user.id)
-
-    embed_text = f"""Removed **{amount}** monthly points from {member.display_name}
-**Weekly: {user_data[user_id]["weekly_points"]} -> {user_data[user_id]["weekly_points"]}
-Monthly: {user_data[user_id]["monthly_points"]} -> {user_data[user_id]["monthly_points"] - amount}
-Total: {user_data[user_id]["total_points"]} -> {user_data[user_id]["total_points"]}**"""
-
-    user_data[user_id]["monthly_points"] -= amount
-
-    embed = discord.Embed(color=discord.Color.green(), title=member.display_name, description=embed_text)
-
-    await ctx.send(embed=embed)
-
 @bot.command(name="undo")
 @commands.has_role(config["member_role"])
-@has_any_of_the_roles(config["staff_roles"])
+@DiscordUtils.has_any_of_the_roles(config["staff_roles"])
 async def undo_last_command(ctx) -> None:
     """
     Revertes the last points-related command used by any user
@@ -1037,8 +883,9 @@ async def on_ready() -> None:
     on_ready set ups
     """
 
-    print("READY")
     update_leaderboards_in_special_channel.start()
+
+    print("READY")
 
 ############################################################### - ARCHIVED COMMANDS AND FUNCTIONS - ###############################################################
 
@@ -1094,7 +941,6 @@ async def play_sound() -> None:
             vc.play(source, after=lambda e: print('Error:', e) if e else None)
             await asyncio.sleep(60)
 
-
 @bot.command()
 @commands.has_role(config["staff_role"])
 async def launch_leaderboards(ctx) -> None:
@@ -1110,12 +956,70 @@ async def launch_leaderboards(ctx) -> None:
     await channel.send(embed=monthly_lb_embed)
     await channel.send(embed=all_time_lb_embed)
 
+    @bot.command(name="rwp")
+@commands.has_role(config["member_role"])
+@DiscordUtils.has_any_of_the_roles(config["staff_roles"])
+async def remove_weekly_points(ctx, amount: int, user: discord.User) -> None:
+    """
+    Removes weekly points from user. Doesn't affect monthly/total points
+    """
+
+    user_id = str(user.id)
+
+    await reset_leaderboards_if_needed()
+
+    if amount > user_data[user_id]["weekly_points"]:
+        await show_message(ctx=ctx, message_title="Error!", message_text="The user doesn't have enough points")
+        return
+
+    member = ctx.guild.get_member(user.id)
+
+    embed_text = f"""Removed **{amount}** weekly points from {member.display_name}
+**Weekly: {user_data[user_id]["weekly_points"]} -> {user_data[user_id]["weekly_points"] - amount}
+Monthly: {user_data[user_id]["monthly_points"]} -> {user_data[user_id]["monthly_points"]}
+Total: {user_data[user_id]["total_points"]} -> {user_data[user_id]["total_points"]}**"""
+
+    user_data[user_id]["weekly_points"] -= amount
+
+    embed = discord.Embed(color=discord.Color.green(), title=member.display_name, description=embed_text)
+
+    await ctx.send(embed=embed)
+
+@bot.command(name="rmp")
+@commands.has_role(config["member_role"])
+@DiscordUtils.has_any_of_the_roles(config["staff_roles"])
+async def remove_monthly_points(ctx, amount: int, user: discord.User) -> None:
+    """
+    Removes monthly points from user. Doesn't affect weekly/total points
+    """
+
+    user_id = str(user.id)
+
+    await reset_leaderboards_if_needed()
+
+    if amount > user_data[user_id]["monthly_points"]:
+        await show_message(ctx=ctx, message_title="Error!", message_text="The user doesn't have enough points")
+        return
+
+    member = ctx.guild.get_member(user.id)
+
+    embed_text = f"""Removed **{amount}** monthly points from {member.display_name}
+**Weekly: {user_data[user_id]["weekly_points"]} -> {user_data[user_id]["weekly_points"]}
+Monthly: {user_data[user_id]["monthly_points"]} -> {user_data[user_id]["monthly_points"] - amount}
+Total: {user_data[user_id]["total_points"]} -> {user_data[user_id]["total_points"]}**"""
+
+    user_data[user_id]["monthly_points"] -= amount
+
+    embed = discord.Embed(color=discord.Color.green(), title=member.display_name, description=embed_text)
+
+    await ctx.send(embed=embed)
 '''
 
 ############################################################### - MAIN PART - ###############################################################
 
 if __name__ == "__main__":
-    user_data = load_user_data(config["user_data_file"])
+    user_data_handler = UserDataHandler()
+    user_data_handler.load_data(config["user_data_file"])
     bot.run(config["token"])
 
 ############################################################### - TODO - ###############################################################
