@@ -36,7 +36,7 @@ class UserDataHandler:
                 user_data_file.write(json.dumps(dict(), indent=2))
         
         # Read the data from json file
-        with open(file_name) as user_data_file:
+        with open(file_name, "r") as user_data_file:
             self._user_data = json.load(user_data_file)
 
     def save_data(self, file_name: str, indent: int = 2) -> None:
