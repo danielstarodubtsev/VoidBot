@@ -1,6 +1,10 @@
 import random
 import string
 
+import discord
+
+from discord.ext import commands
+
 
 class Utils:
     def __init__(self) -> None:
@@ -35,3 +39,22 @@ class Utils:
         """
 
         return rank1.split(" - ")[0] == rank2.split(" - ")[0]
+    
+
+class DiscordUtils:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def is_user_in_guild(id: int, guild: discord.Guild) -> bool:
+        return guild.get_member(id) is not None
+    
+    def has_any_of_the_roles(role_names: list[str]):
+        """
+        Decorator that checks whether the message author has any of the listed roles
+        """
+
+        async def predicate(ctx) -> bool:
+            return bool({role.name for role in ctx.author.roles} & set(role_names))
+        
+        return commands.check(predicate)

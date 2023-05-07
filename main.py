@@ -25,9 +25,8 @@ from datetime import datetime, timezone
 from io import BytesIO
 
 from config_handler import ConfigHandler
-from discord_utils import DiscordUtils
 from user_data_handler import UserDataHandler
-from utils import Utils
+from utils import DiscordUtils, Utils
 
 import discord
 import requests
