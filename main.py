@@ -590,7 +590,7 @@ async def balance(ctx, user: discord.User = None) -> None:
     # Wins leaderboard
     for position in range(ending_wins_lb_index, starting_wins_lb_index - 1, -1):
         current_member = bot.get_guild(config["server_id"]).get_member(int(wins_keys[position]))
-        display_text = f"{position + 1}. {Utils.shorten_string(current_member.display_name, 20)}: {user_data_handler.get_attribute(current_member.id, 'total_wins')}"
+        display_text = f"{position + 1}. {Utils.shorten_string(current_member.display_name, 20)}: {int(user_data_handler.get_attribute(current_member.id, 'total_wins'))}"
 
         fill_color = (166, 166, 166, 255) if position != wins_user_pos else (255, 255, 255, 255)
         drawer.text((353, 636 - (ending_wins_lb_index - position) * 30), text=display_text, font=smallest_font, fill=fill_color)
