@@ -117,7 +117,7 @@ class UserDataHandler:
         """
 
         for id in self._user_data:
-            self._user_data[id] = self._default_entry[attribute]
+            self._user_data[id][attribute] = self._default_entry[attribute]
 
     def set_attribute(self, id: int, attribute: str, value: object) -> None:
         """
