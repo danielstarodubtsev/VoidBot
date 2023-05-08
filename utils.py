@@ -49,6 +49,7 @@ class DiscordUtils:
     def is_user_in_guild(id: int, guild: discord.Guild) -> bool:
         return guild.get_member(id) is not None
     
+    @staticmethod
     def has_any_of_the_roles(role_names: list[str]):
         """
         Decorator that checks whether the message author has any of the listed roles
