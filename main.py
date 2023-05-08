@@ -44,17 +44,6 @@ bot = commands.Bot(command_prefix=config_handler.get_attribute("command_prefix")
 
 ############################################################### - UTIL FUNCTIONS - ###############################################################
 
-def save_data(save_user_data: bool = True, save_config: bool = True) -> None:
-    """
-    Saves all the data to json files
-    """
-
-    if save_user_data:
-        user_data_handler.save_data(config_handler.get_attribute("user_data_file"))
-
-    if save_config:
-        config_handler.save_data(CONFIG_FILE)
-
 def create_embed_for_top(top: int, by: str, title: str) -> discord.Embed:
     """
     Returnes a discord.Embed object for the given top
@@ -161,7 +150,7 @@ async def reset_leaderboards_if_needed() -> None:
         user_data_handler.reset_attribute("monthly_points")
         user_data_handler.reset_attribute("monthly_wins")
 
-    save_data(save_user_data=False)
+    config_handler.save_data(CONFIG_FILE)
 
 async def show_message(ctx, message_title: str, message_text: str) -> None:
     """
@@ -230,7 +219,7 @@ Total: {old_total_points} -> {new_total_points}**\n"""
             user_data_handler.set_attribute(user.id, "total_wins", old_total_wins + amount / abs(amount))
 
         new_rank = await update_user(ctx, user)
-        save_data(save_config=False)
+        user_data_handler.save_data(config_handler.get_attribute("user_data_file"))
         
         if new_rank:
             value += f"{member.display_name} ranked {'up' if amount_with_mult > 0 else 'down'} to {new_rank}\n"
@@ -737,7 +726,7 @@ async def use_referral_code(ctx, code: str) -> None:
                 user_data_handler.set_attribute(possible_commander_id, "referrals", referrals)
 
             user_data_handler.set_attribute(user_id, "commander", possible_commander_id)
-            save_data(save_config=False)
+            user_data_handler.save_data(config_handler.get_attribute("user_data_file"))
             await show_message(ctx=ctx, message_title="Success!", message_text=f"Now {ctx.guild.get_member(int(possible_commander_id)).display_name} is your commander")
             break
     else:
@@ -843,7 +832,7 @@ async def set_multiplier(ctx, multiplier: float) -> None:
     await show_message(ctx=ctx, message_title="Success!", message_text=f"The points multiplier is now {multiplier}")
 
     config_handler.set_attribute("multiplier", multiplier)
-    save_data(save_user_data=False)
+    config_handler.save_data(CONFIG_FILE)
 
 @bot.command(name="undo")
 @commands.has_role(config_handler.get_attribute("member_role"))
