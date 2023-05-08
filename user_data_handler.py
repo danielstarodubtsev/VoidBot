@@ -23,6 +23,10 @@ class UserDataHandler:
                                "unlocked_achievements": []}
 
     def _reset_referral_code(self) -> None:
+        """
+        Resets the referral code attribute in _default_entry
+        """
+        
         self._default_entry["referral_code"] = Utils.generate_referral_code()
 
     def load_data(self, file_name: str) -> None:
