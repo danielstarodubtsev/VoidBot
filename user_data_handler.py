@@ -22,6 +22,9 @@ class UserDataHandler:
                                "commander": None,
                                "unlocked_achievements": []}
 
+    def __len__(self) -> int:
+        return len(self._user_data)
+
     def _reset_referral_code(self) -> None:
         """
         Resets the referral code attribute in _default_entry
@@ -136,10 +139,3 @@ class UserDataHandler:
         """
 
         return [int(id) for id in self._user_data]
-    
-    def get_number_of_entries(self) -> int:
-        """
-        Returnes the total number of entries in the database
-        """
-        
-        return len(self._user_data)
