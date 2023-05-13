@@ -93,7 +93,7 @@ class UserDataHandler:
         if self.is_in_database(id):
             return
         
-        self._user_data[str(id)] = self._default_entry
+        self._user_data[str(id)] = self._default_entry.copy()
         self._reset_referral_code()
 
     def reset_entry(self, id: int) -> None:
@@ -104,7 +104,7 @@ class UserDataHandler:
         if not self.is_in_database(id):
             raise Exception("User with id <{id}> isn't in the database")
         
-        self._user_data[str(id)] = self._default_entry
+        self._user_data[str(id)] = self._default_entry.copy()
         self._reset_referral_code()
         
     def sort_database(self, by_attribute: str, reverse: bool = True) -> None:
