@@ -1001,7 +1001,7 @@ if __name__ == "__main__":
     user_data = UserDataHandler()
     user_data.load_data(config.get_attribute("user_data_file"))
 
-    # bot.run(config.get_attribute("token"))
+    bot.run(config.get_attribute("token"))
 
 ############################################################### - TODO - ###############################################################
 
