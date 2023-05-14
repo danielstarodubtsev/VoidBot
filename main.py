@@ -17,7 +17,6 @@ Credit for help, ideas and suggestions:
 """
 
 
-import json
 import math
 import os
 
