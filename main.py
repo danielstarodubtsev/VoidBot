@@ -773,7 +773,7 @@ async def help_command(ctx) -> None:
 {config.get_attribute("command_prefix")}a (points) (user) - gives the user a certain amount of points
 {config.get_attribute("command_prefix")}r (points) (user) - removes a certain amount of points from the user
 {config.get_attribute("command_prefix")}mult (multiplier) - sets the points multiplier
-{config.get_attribute("command_prefix")}undo - revertes the last points-related command used by any user (except rwp and rmp commands)"""
+{config.get_attribute("command_prefix")}undo - revertes the last points-related command used by any user"""
 
     embed = discord.Embed(title="All VoidBot commands", color=discord.Color.dark_gold(), description=help_text)
     await ctx.send(embed=embed)
