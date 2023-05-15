@@ -68,7 +68,7 @@ def create_embed_for_top(top: int, by: str, title: str) -> discord.Embed:
             case _:
                 place = f"{index}."
 
-        embed_text += f"{place} {member.display_name}: {':coin:' if by != 'total_wins' else ''} {int(leaderboard[user_id][by])}\n"
+        embed_text += f"{place} {member.display_name}: {':coin:' if 'wins' not in by else ''} {int(leaderboard[user_id][by])}\n"
 
     return discord.Embed(color=discord.Color.blue(), title=title, description=embed_text)
 
@@ -610,7 +610,7 @@ async def balance(ctx, user: discord.User = None) -> None:
 
 @bot.command(name="top")
 @commands.has_role(config.get_attribute("member_role"))
-async def top_players(ctx, top: int, by: str = "total_points", title: str = None) -> None:
+async def top_players(ctx, top: int, by1: str = "points", by2: str = "total") -> None:
     """
     Shows the top X players
     """
@@ -623,18 +623,22 @@ async def top_players(ctx, top: int, by: str = "total_points", title: str = None
         await show_message(ctx=ctx, message_title="Error!", message_text="Only positive values allowed")
         return
     
-    by_fix = {"weekly": "weekly_points",
-              "monthly": "monthly_points",
+    by = f"{by1} {by2}"
+    
+    by_fix = {"points": "total_points",
+              "points total": "total_points",
+              "points monthly": "monthly_points",
+              "points weekly": "weekly_points",
               "wins": "total_wins",
-              "total_points": "total_points"}
+              "wins total": "total_wins",
+              "wins monthly": "monthly_wins",
+              "wins weekly": "weekly_wins"}
 
     if by not in by_fix:
         await show_message(ctx=ctx, message_title="Error!", message_text=f'Unknown keyword "{by}"')
         return
 
-    if not title:
-        title = f"Top {top} {config.get_attribute('clan_tag')} players"
-
+    title = f"Top {top} {config.get_attribute('clan_tag')} players"
     by = by_fix[by]
 
     embed = create_embed_for_top(top=top, by=by, title=title)
@@ -762,7 +766,7 @@ async def help_command(ctx) -> None:
 {config.get_attribute("command_prefix")}cg (points) (user1) [user2] ... [userN] - gives all listed users a certain amount of points
 {config.get_attribute("command_prefix")}d (points) (user1) [user2] ... [userN] - distibutes the points equally between mentioned users
 {config.get_attribute("command_prefix")}bal [user] - shows the user's balance. By default the user is the one who ran the command
-{config.get_attribute("command_prefix")}top (X) [keyword] - shows the top X players by <keyword> where keyword may be "weekly", "monthly" or "wins". By default will show the all-time top
+{config.get_attribute("command_prefix")}top (X) [keyword1] [keyword2] - shows the top X players by "keywords" where keyword1 may be "points" or "wins", keyword2 may be "total", "monthly" or "weekly". Default: keyword1 = "points", keyword2 = "total"
 {config.get_attribute("command_prefix")}lb [user] - shows the user's position on the leaderboard and several players around them. By default the user is the one who ran the command
 {config.get_attribute("command_prefix")}code [user] - shows the user's referral code. By default the user is the one who ran the command. Only available to members with at least {config.get_attribute("commander_threshold")} points
 {config.get_attribute("command_prefix")}usecode (code) - uses a referral code. Only available to members with less than {config.get_attribute("referral_threshold")} points
