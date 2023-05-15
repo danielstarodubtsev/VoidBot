@@ -22,7 +22,8 @@ class UserDataHandler:
                                "referral_code": Utils.generate_referral_code(),
                                "referrals": [],
                                "commander": None,
-                               "unlocked_achievements": []}
+                               "unlocked_achievements": [],
+                               "event_points": 0}
 
     def __len__(self) -> int:
         return len(self._user_data)
