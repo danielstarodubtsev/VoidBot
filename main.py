@@ -775,7 +775,7 @@ async def help_command(ctx) -> None:
 {config.get_attribute("command_prefix")}cg (points) (user1) [user2] ... [userN] - gives all listed users a certain amount of points
 {config.get_attribute("command_prefix")}d (points) (user1) [user2] ... [userN] - distibutes the points equally between mentioned users
 {config.get_attribute("command_prefix")}bal [user] - shows the user's balance. By default the user is the one who ran the command
-{config.get_attribute("command_prefix")}top (X) [keyword1] [keyword2] - shows the top X players by "keywords" where keyword1 may be "points" or "wins", keyword2 may be "total", "monthly" or "weekly". Default: keyword1 = "points", keyword2 = "total"
+{config.get_attribute("command_prefix")}top (X) [keyword1] [keyword2] - shows the top X players by "keywords" where keyword1 may be "points" or "wins", keyword2 may be "total", "monthly", "weekly" or "event". Default: keyword1 = "points", keyword2 = "total"
 {config.get_attribute("command_prefix")}lb [user] - shows the user's position on the leaderboard and several players around them. By default the user is the one who ran the command
 {config.get_attribute("command_prefix")}code [user] - shows the user's referral code. By default the user is the one who ran the command. Only available to members with at least {config.get_attribute("commander_threshold")} points
 {config.get_attribute("command_prefix")}usecode (code) - uses a referral code. Only available to members with less than {config.get_attribute("referral_threshold")} points
@@ -786,7 +786,9 @@ async def help_command(ctx) -> None:
 {config.get_attribute("command_prefix")}a (points) (user) - gives the user a certain amount of points
 {config.get_attribute("command_prefix")}r (points) (user) - removes a certain amount of points from the user
 {config.get_attribute("command_prefix")}mult (multiplier) - sets the points multiplier
-{config.get_attribute("command_prefix")}undo - revertes the last points-related command used by any user"""
+{config.get_attribute("command_prefix")}undo - revertes the last points-related command used by any user
+{config.get_attribute("command_prefix")}startevent - starts a new exent with a separate points leaderboard. There can only be one event at a time
+{config.get_attribute("command_prefix")}endevent - ends the current event and shows the final event leaderboard"""
 
     embed = discord.Embed(title="All VoidBot commands", color=discord.Color.dark_gold(), description=help_text)
     await ctx.send(embed=embed)
