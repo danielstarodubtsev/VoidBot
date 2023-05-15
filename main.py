@@ -787,7 +787,7 @@ async def help_command(ctx) -> None:
 {config.get_attribute("command_prefix")}r (points) (user) - removes a certain amount of points from the user
 {config.get_attribute("command_prefix")}mult (multiplier) - sets the points multiplier
 {config.get_attribute("command_prefix")}undo - revertes the last points-related command used by any user
-{config.get_attribute("command_prefix")}startevent - starts a new exent with a separate points leaderboard. There can only be one event at a time
+{config.get_attribute("command_prefix")}startevent - starts a new event with a separate points leaderboard. There can only be one event at a time
 {config.get_attribute("command_prefix")}endevent - ends the current event and shows the final event leaderboard"""
 
     embed = discord.Embed(title="All VoidBot commands", color=discord.Color.dark_gold(), description=help_text)
