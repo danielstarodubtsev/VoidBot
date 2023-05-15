@@ -177,6 +177,7 @@ async def manipulate_points(ctx, amounts: list[float], users: list[discord.User]
         old_weekly_points = user_data.get_attribute(user.id, "weekly_points")
         old_monthly_points = user_data.get_attribute(user.id, "monthly_points")
         old_total_points = user_data.get_attribute(user.id, "total_points")
+        old_event_points = user_data.get_attribute(user.id, "event_points")
 
         old_weekly_wins = user_data.get_attribute(user.id, "weekly_wins")
         old_monthly_wins = user_data.get_attribute(user.id, "monthly_wins")
@@ -187,6 +188,7 @@ async def manipulate_points(ctx, amounts: list[float], users: list[discord.User]
         new_weekly_points = old_weekly_points + amount_with_mult
         new_monthly_points = old_monthly_points + amount_with_mult
         new_total_points = old_total_points + amount_with_mult
+        new_event_points = old_event_points + amount_with_mult
 
         if new_weekly_points < 0 or new_monthly_points < 0 or new_total_points < 0:
             await show_message(ctx=ctx, message_title="Error!", message_text="Negative points are not allowed")
@@ -202,6 +204,8 @@ Total: {old_total_points} -> {new_total_points}**\n"""
         user_data.set_attribute(user.id, "weekly_points", new_weekly_points)
         user_data.set_attribute(user.id, "monthly_points", new_monthly_points)
         user_data.set_attribute(user.id, "total_points", new_total_points)
+        if config.get_attribute("is_event"):
+            user_data.set_attribute(user.id, "event_points", new_event_points)
 
         if new_total_points >= config.get_attribute("commander_threshold"):
             commander_id = user_data.get_attribute(user.id, "commander")
@@ -632,14 +636,19 @@ async def top_players(ctx, top: int, by1: str = "points", by2: str = "total") ->
               "wins": "total_wins",
               "wins total": "total_wins",
               "wins monthly": "monthly_wins",
-              "wins weekly": "weekly_wins"}
+              "wins weekly": "weekly_wins",
+              "points event": "event_points"}
 
     if by not in by_fix:
-        await show_message(ctx=ctx, message_title="Error!", message_text=f'Unknown keyword "{by}"')
+        await show_message(ctx=ctx, message_title="Error!", message_text=f'Unknown keywords combination "{by1}" + "{by2}"')
         return
 
     title = f"Top {top} {config.get_attribute('clan_tag')} players"
     by = by_fix[by]
+
+    if by == "event_points" and not config.get_attribute("is_event"):
+        await show_message(ctx=ctx, message_title="Error!", message_text="There is no event currently")
+        return
 
     embed = create_embed_for_top(top=top, by=by, title=title)
 
@@ -857,6 +866,48 @@ async def undo_last_command(ctx) -> None:
 
     with open("points_logs.txt", "w") as points_logs_file:
         points_logs_file.write("".join(lines))
+
+@bot.command(name="startevent")
+@commands.has_role(config.get_attribute("member_role"))
+@DiscordUtils.has_any_of_the_roles(config.get_attribute("staff_roles"))
+async def start_event(ctx) -> None:
+    """
+    Toggles the config "is_event" attribute to become true
+    """
+
+    if config.get_attribute("is_event"):
+        await show_message(ctx=ctx, message_title="Error!", message_text="An event already exists, consider ending it before starting a new one!")
+        return
+    
+    config.set_attribute("is_event", True)
+    config.save_data(CONFIG_FILE)
+
+    user_data.reset_attribute("event_points")
+    user_data.save_data(config.get_attribute("user_data_file"))
+
+    await show_message(ctx=ctx, message_title="Success!", message_text='Event started! Run "top" command with "points" + "event" keywords to see the leaderboard')
+
+@bot.command(name="endevent")
+@commands.has_role(config.get_attribute("member_role"))
+@DiscordUtils.has_any_of_the_roles(config.get_attribute("staff_roles"))
+async def end_event(ctx) -> None:
+    """
+    Toggles the config "is_event" attribute to become false, sends resulting event leaderboard into the channel where the command was run
+    """
+
+    if not config.get_attribute("is_event"):
+        await show_message(ctx=ctx, message_title="Error!", message_text="There isn't an event currently, consider creating one!")
+        return
+    
+    config.set_attribute("is_event", False)
+    config.save_data(CONFIG_FILE)
+
+    results_embed = create_embed_for_top(top=30, by="event_points", title="Event results")
+
+    user_data.reset_attribute("event_points")
+    user_data.save_data(config.get_attribute("user_data_file"))
+
+    await ctx.send(embed=results_embed)
 
 ############################################################### - ON_EVENT ACTIONS - ###############################################################
 
