@@ -1,6 +1,6 @@
 {
   "token": "MTA2NDI2NTI4NDA0MDU0MDE4MQ.G4ZQTh.Tu4WxOD_YrHmLfoUkaCsKZnpVZe8cLArfUdvTI",
-  "command_prefix": ".",
+  "command_prefix": "!",
   "clan_tag": "VOID",
   "user_data_file": "user_data.json",
   "member_role": "[I] Seeker - 1",
@@ -22,7 +22,8 @@
   "referral_threshold": 5000,
   "commander_threshold": 10000,
   "multiplier": 1.0,
-  "current_weekday": 3,
+  "is_event": false,
+  "current_weekday": 1,
   "current_month": 5,
   "roles_threshold": {
     "[I] Seeker - 1": 1,
