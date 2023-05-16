@@ -92,7 +92,7 @@ def get_ranks_list() -> list[str]:
 
 ############################################################### - NON-COMMAND ASYNC FUNCTIONS - ###############################################################
 
-async def update_user(ctx, user: discord.User) -> str:
+async def update_user(ctx: commands.Context, user: discord.User) -> str:
     """
     Updates user's rank. Returns the new rank if it was changed
     """
@@ -151,7 +151,7 @@ async def reset_leaderboards_if_needed() -> None:
 
     config.save_data(CONFIG_FILE)
 
-async def show_message(ctx, message_title: str, message_text: str) -> None:
+async def show_message(ctx: commands.Context, message_title: str, message_text: str) -> None:
     """
     Shows a message
     """
@@ -160,7 +160,7 @@ async def show_message(ctx, message_title: str, message_text: str) -> None:
 
     await ctx.send(embed=embed)
 
-async def manipulate_points(ctx, amounts: list[float], users: list[discord.User]) -> None:
+async def manipulate_points(ctx: commands.Context, amounts: list[float], users: list[discord.User]) -> None:
     """
     Gives the user a certain amount of points
     """
@@ -305,7 +305,7 @@ async def update_leaderboards_in_special_channel() -> None:
 
 @bot.command(name="g")
 @commands.has_role(config.get_attribute("member_role"))
-async def give_points(ctx, amount: int) -> None:
+async def give_points(ctx: commands.Context, amount: int) -> None:
     """
     Gives the user who ran the command a certain amount of points
     """
@@ -326,7 +326,7 @@ async def give_points(ctx, amount: int) -> None:
 
 @bot.command(name="cg")
 @commands.has_role(config.get_attribute("member_role"))
-async def contest_give(ctx, amount: int, *users: discord.User) -> None:
+async def contest_give(ctx: commands.Context, amount: int, *users: discord.User) -> None:
     """
     Gives a certain amount of points to multiple users
     """
@@ -357,7 +357,7 @@ async def contest_give(ctx, amount: int, *users: discord.User) -> None:
 
 @bot.command(name="d")
 @commands.has_role(config.get_attribute("member_role"))
-async def distribute_points(ctx, amount: int, *users: discord.User) -> None:
+async def distribute_points(ctx: commands.Context, amount: int, *users: discord.User) -> None:
     """
     Distributes the points equally between listed users
     """
@@ -388,7 +388,7 @@ async def distribute_points(ctx, amount: int, *users: discord.User) -> None:
 
 @bot.command(name="bal")
 @commands.has_role(config.get_attribute("member_role"))
-async def balance(ctx, user: discord.User = None) -> None:
+async def balance(ctx: commands.Context, user: discord.User = None) -> None:
     """
     Shows info about user, including weekly, monthly and all-time points and wins, user's position on the leaderboards and user's progress towards next ranks
     """
@@ -614,7 +614,7 @@ async def balance(ctx, user: discord.User = None) -> None:
 
 @bot.command(name="top")
 @commands.has_role(config.get_attribute("member_role"))
-async def top_players(ctx, top: int, by1: str = "points", by2: str = "total") -> None:
+async def top_players(ctx: commands.Context, top: int, by1: str = "points", by2: str = "total") -> None:
     """
     Shows the top X players
     """
@@ -656,7 +656,7 @@ async def top_players(ctx, top: int, by1: str = "points", by2: str = "total") ->
 
 @bot.command(name="lb")
 @commands.has_role(config.get_attribute("member_role"))
-async def leaderboard(ctx, user: discord.User = None) -> None:
+async def leaderboard(ctx: commands.Context, user: discord.User = None) -> None:
     """
     Shows the player's position on the leaderboard and several players around them
     """
@@ -695,7 +695,7 @@ async def leaderboard(ctx, user: discord.User = None) -> None:
 
 @bot.command(name="code")
 @commands.has_role(config.get_attribute("member_role"))
-async def get_referral_code(ctx, user: discord.User = None) -> None:
+async def get_referral_code(ctx: commands.Context, user: discord.User = None) -> None:
     """
     Shows a message with the user's referral code
     """
@@ -714,7 +714,7 @@ async def get_referral_code(ctx, user: discord.User = None) -> None:
 
 @bot.command(name="usecode")
 @commands.has_role(config.get_attribute("member_role"))
-async def use_referral_code(ctx, code: str) -> None:
+async def use_referral_code(ctx: commands.Context, code: str) -> None:
     """
     Allows a user to use a referral code, if possible
     """
@@ -747,7 +747,7 @@ async def use_referral_code(ctx, code: str) -> None:
 
 @bot.command(name="referrals")
 @commands.has_role(config.get_attribute("member_role"))
-async def get_user_referrals(ctx, user: discord.User = None) -> None:
+async def get_user_referrals(ctx: commands.Context, user: discord.User = None) -> None:
     """
     Allows to see all the referrals
     """
@@ -765,7 +765,7 @@ async def get_user_referrals(ctx, user: discord.User = None) -> None:
 
 @bot.command(name="help")
 @commands.has_role(config.get_attribute("member_role"))
-async def help_command(ctx) -> None:
+async def help_command(ctx: commands.Context) -> None:
     """
     Shows all the commands of the bot
     """
@@ -798,7 +798,7 @@ async def help_command(ctx) -> None:
 @bot.command(name="a")
 @commands.has_role(config.get_attribute("member_role"))
 @DiscordUtils.has_any_of_the_roles(config.get_attribute("staff_roles"))
-async def add_points(ctx, amount: int, user: discord.User) -> None:
+async def add_points(ctx: commands.Context, amount: int, user: discord.User) -> None:
     """
     Adds a certain amount of points to any user
     """
@@ -820,7 +820,7 @@ async def add_points(ctx, amount: int, user: discord.User) -> None:
 @bot.command(name="r")
 @commands.has_role(config.get_attribute("member_role"))
 @DiscordUtils.has_any_of_the_roles(config.get_attribute("staff_roles"))
-async def remove_points(ctx, amount: int, user: discord.User) -> None:
+async def remove_points(ctx: commands.Context, amount: int, user: discord.User) -> None:
     """
     Removes a certain amount of points from any user
     """
@@ -834,7 +834,7 @@ async def remove_points(ctx, amount: int, user: discord.User) -> None:
 @bot.command(name="mult")
 @commands.has_role(config.get_attribute("member_role"))
 @DiscordUtils.has_any_of_the_roles(config.get_attribute("staff_roles"))
-async def set_multiplier(ctx, multiplier: float) -> None:
+async def set_multiplier(ctx: commands.Context, multiplier: float) -> None:
     """
     Sets a point multiplier (for 2x events etc.)
     """
@@ -851,7 +851,7 @@ async def set_multiplier(ctx, multiplier: float) -> None:
 @bot.command(name="undo")
 @commands.has_role(config.get_attribute("member_role"))
 @DiscordUtils.has_any_of_the_roles(config.get_attribute("staff_roles"))
-async def undo_last_command(ctx) -> None:
+async def undo_last_command(ctx: commands.Context) -> None:
     """
     Revertes the last points-related command used by any user
     """
@@ -872,7 +872,7 @@ async def undo_last_command(ctx) -> None:
 @bot.command(name="startevent")
 @commands.has_role(config.get_attribute("member_role"))
 @DiscordUtils.has_any_of_the_roles(config.get_attribute("staff_roles"))
-async def start_event(ctx) -> None:
+async def start_event(ctx: commands.Context) -> None:
     """
     Toggles the config "is_event" attribute to become true
     """
@@ -892,7 +892,7 @@ async def start_event(ctx) -> None:
 @bot.command(name="endevent")
 @commands.has_role(config.get_attribute("member_role"))
 @DiscordUtils.has_any_of_the_roles(config.get_attribute("staff_roles"))
-async def end_event(ctx) -> None:
+async def end_event(ctx: commands.Context) -> None:
     """
     Toggles the config "is_event" attribute to become false, sends resulting event leaderboard into the channel where the command was run
     """
