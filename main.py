@@ -618,11 +618,7 @@ async def balance(ctx: commands.Context, user: discord.User = None) -> None:
 
     progress_bar_img.save("cache_image_bal.png")
 
-    with open("cache_image_bal.png", "rb") as pic_file:
-        await temporary_loading_message.add_files(discord.File(pic_file))
-        await temporary_loading_message.edit(content="")
-    
-    os.remove("cache_image_bal.png")
+    await DiscordUtils.turn_msg_into_file(temporary_loading_message, "cache_image_bal.png", "")
 
 @bot.command(name="top")
 @commands.has_role(config.get_attribute("member_role"))

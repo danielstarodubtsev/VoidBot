@@ -1,3 +1,4 @@
+import os
 import random
 import string
 
@@ -30,7 +31,7 @@ class Utils:
         if val > max_val, returns max_val
         Otherwise returns val
         """
-        
+
         return min(max_val, max(min_val, val))
     
     @staticmethod
@@ -71,3 +72,19 @@ class DiscordUtils:
             return bool({role.name for role in ctx.author.roles} & set(role_names))
         
         return commands.check(predicate)
+    
+    @staticmethod
+    async def turn_msg_into_file(message: discord.Message, file_name: str, new_content: str = "", remove_file: bool = True) -> None:
+        """
+        Turns the message with the given ID into a file, substitutes the previous content with the new one
+        Useful for example when first sending a message with a loading text, then converting it to a file via this func
+        Deletes the file upon sending if remove_file is True
+        """
+
+        with open(file_name, "rb") as file:
+            await message.add_files(discord.File(file))
+        
+        await message.edit(content=new_content)
+
+        if remove_file:
+            os.remove(file_name)
