@@ -3,7 +3,7 @@ import os
 
 from copy import deepcopy
 
-from utils import Utils
+from scripts.utils import Utils
 
 class UserDataHandler:
     """

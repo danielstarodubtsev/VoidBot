@@ -23,9 +23,9 @@ import os
 from datetime import datetime, timezone
 from io import BytesIO
 
-from config_handler import ConfigHandler
-from user_data_handler import UserDataHandler
-from utils import DiscordUtils, Utils
+from scripts.config_handler import ConfigHandler
+from scripts.user_data_handler import UserDataHandler
+from scripts.utils import DiscordUtils, Utils
 
 import discord
 import requests
@@ -34,7 +34,7 @@ from discord.ext import commands, tasks
 from PIL import Image, ImageDraw, ImageFont
 
 
-CONFIG_FILE = "config.json"
+CONFIG_FILE = "config_and_data/config.json"
 
 config = ConfigHandler()
 config.load_data(CONFIG_FILE)
@@ -227,10 +227,10 @@ Total: {old_total_points} -> {new_total_points}**\n"""
         if new_rank:
             value += f"{member.display_name} ranked {'up' if amount_with_mult > 0 else 'down'} to {new_rank}\n"
 
-    with open("points_logs.txt", "r") as points_logs_file:
+    with open("config_and_data/points_logs.txt", "r") as points_logs_file:
         lines = (points_logs_file.readlines() + [f"{[user.id for user in users]} - {result_amounts}\n"])[-500:]
 
-    with open("points_logs.txt", "w") as points_logs_file:
+    with open("config_and_data/points_logs.txt", "w") as points_logs_file:
         points_logs_file.write("".join(lines))
 
     embed = discord.Embed(color=discord.Color.green(), description=value)
@@ -406,9 +406,9 @@ async def balance(ctx: commands.Context, user: discord.User = None) -> None:
     dark_grey = (36, 36, 36, 255)
     darker_box_color = (32, 34, 37, 255)
     darkest_box_color = (24, 26, 27, 255)
-    header_font = ImageFont.truetype("verdana.ttf", 40)
-    smaller_font = ImageFont.truetype("verdana.ttf", 30)
-    smallest_font = ImageFont.truetype("verdana.ttf", 14)
+    header_font = ImageFont.truetype("assets/verdana.ttf", 40)
+    smaller_font = ImageFont.truetype("assets/verdana.ttf", 30)
+    smallest_font = ImageFont.truetype("assets/verdana.ttf", 14)
 
     if user is None:
         user = bot.get_user(ctx.author.id)
@@ -444,7 +444,7 @@ async def balance(ctx: commands.Context, user: discord.User = None) -> None:
         image_data = requests.get(pfp_url).content
         pfp_image = Image.open(BytesIO(image_data))
     except: # Occurs if user doesn't have a pfp
-        pfp_image = Image.open("default_discord_pfp.png")
+        pfp_image = Image.open("images/default_discord_pfp.png")
     pfp_image = pfp_image.resize((90, 90))
 
     guild_icon_url = ctx.guild.icon
@@ -503,8 +503,8 @@ async def balance(ctx: commands.Context, user: discord.User = None) -> None:
     ending_wins_lb_index = min(starting_wins_lb_index + 6, len(wins_keys) - 1)
 
     # Starting to render info on the image
-    if os.path.exists("basic_bal_pic.png"):
-        progress_bar_img = Image.open("basic_bal_pic.png")
+    if os.path.exists("images/basic_bal_pic.png"):
+        progress_bar_img = Image.open("images/basic_bal_pic.png")
         drawer = ImageDraw.Draw(progress_bar_img)
     else:
         progress_bar_img = Image.new("RGBA", (WIDTH, HEIGHT), color=transparent_color)
@@ -550,7 +550,7 @@ async def balance(ctx: commands.Context, user: discord.User = None) -> None:
         drawer.text((347, 398), text="Wins LB", font=smaller_font)
         drawer.text((660, 398), text="Rank progress", font=smaller_font)
 
-        progress_bar_img.save("basic_bal_pic.png")
+        progress_bar_img.save("assets/basic_bal_pic.png")
 
     # Placing the stuff in the top left corner
     progress_bar_img.paste(pfp_image, (20, 20))
@@ -863,7 +863,7 @@ async def undo_last_command(ctx: commands.Context) -> None:
     Revertes the last points-related command used by any user
     """
 
-    with open("points_logs.txt", "r") as points_logs_file:
+    with open("config_and_data/points_logs.txt", "r") as points_logs_file:
         lines = points_logs_file.readlines()
 
     last_action = lines.pop(-1)
@@ -873,7 +873,7 @@ async def undo_last_command(ctx: commands.Context) -> None:
 
     await manipulate_points(ctx=ctx, amounts=amounts, users=users)
 
-    with open("points_logs.txt", "w") as points_logs_file:
+    with open("config_and_data/points_logs.txt", "w") as points_logs_file:
         points_logs_file.write("".join(lines))
 
 @bot.command(name="startevent")
