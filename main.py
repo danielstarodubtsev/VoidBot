@@ -604,7 +604,7 @@ async def balance(ctx: commands.Context, user: discord.User = None) -> None:
     drawer.rounded_rectangle((675, 465, 675 + upper_bar_length, 525), fill=light_grey, radius=corner_radius / 4)
     drawer.rounded_rectangle((675, 565, 675 + lower_bar_length, 625), fill=light_grey, radius=corner_radius / 4)
 
-    # Display percantage text depending on whether the bar is more than half full or no
+    # Display percentage text depending on whether the bar is more than half full or no
     upper_percentage_text = f"{upper_percentage}%"
     lower_percentage_text = f"{lower_percentage}%"
     if upper_percentage > 50:
