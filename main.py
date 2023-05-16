@@ -590,16 +590,21 @@ async def balance(ctx: commands.Context, user: discord.User = None) -> None:
 
     # Progress bars
     TOTAL_BAR_LENGTH = 545
-    upper_bar_length = TOTAL_BAR_LENGTH * max(0, min(1, (user_data.get_attribute(user_id, 'total_points') - config.get_attribute("roles_threshold")[member_rank]) / (config.get_attribute("roles_threshold")[next_rank] - config.get_attribute("roles_threshold")[member_rank] + 1)))
-    lower_bar_length = TOTAL_BAR_LENGTH * max(0, min(1, (user_data.get_attribute(user_id, 'total_points') - config.get_attribute("roles_threshold")[global_member_rank]) / (config.get_attribute("roles_threshold")[next_global_member_rank] - config.get_attribute("roles_threshold")[global_member_rank] + 1)))
+
+    upper_percentage = Utils.range_clamp(round(100 * (user_data.get_attribute(user_id, 'total_points') - config.get_attribute("roles_threshold")[member_rank]) / (config.get_attribute("roles_threshold")[next_rank] - config.get_attribute("roles_threshold")[member_rank] + 1), 2), 0, 100)
+    lower_percentage = Utils.range_clamp(round(100 * (user_data.get_attribute(user_id, 'total_points') - config.get_attribute("roles_threshold")[global_member_rank]) / (config.get_attribute("roles_threshold")[next_global_member_rank] - config.get_attribute("roles_threshold")[global_member_rank] + 1), 2), 0, 100)
+    upper_bar_length = TOTAL_BAR_LENGTH * Utils.range_clamp(upper_percentage / 100, 0, 1)
+    lower_bar_length = TOTAL_BAR_LENGTH * Utils.range_clamp(lower_percentage / 100, 0, 1)
+
+    # Draw the progress bars and display the ranks between which progress is made
     drawer.text((675, 530), text=member_rank, font=smallest_font)
     drawer.text((1220 - smallest_font.getbbox(next_rank)[2], 530), text=next_rank, font=smallest_font)
     drawer.text((675, 630), text=global_member_rank, font=smallest_font)
     drawer.text((1220 - smallest_font.getbbox(next_global_member_rank)[2], 630), text=next_global_member_rank, font=smallest_font)
     drawer.rounded_rectangle((675, 465, 675 + upper_bar_length, 525), fill=light_grey, radius=corner_radius / 4)
     drawer.rounded_rectangle((675, 565, 675 + lower_bar_length, 625), fill=light_grey, radius=corner_radius / 4)
-    upper_percentage = round(upper_bar_length / TOTAL_BAR_LENGTH * 100, 1)
-    lower_percentage = round(lower_bar_length / TOTAL_BAR_LENGTH * 100, 1)
+
+    # Display percantage text depending on whether the bar is more than half full or no
     upper_percentage_text = f"{upper_percentage}%"
     lower_percentage_text = f"{lower_percentage}%"
     if upper_percentage > 50:
