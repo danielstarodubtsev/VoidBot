@@ -41,7 +41,7 @@ class UserDataHandler:
         """
         
         # If the user data file doesn't exist we create it and fill with an empty json object
-        if not os.path.exists(f"./{file_name}"):
+        if not os.path.exists(f"{file_name}"):
             with open(file_name, "w") as user_data_file:
                 user_data_file.write(json.dumps(dict(), indent=2))
         

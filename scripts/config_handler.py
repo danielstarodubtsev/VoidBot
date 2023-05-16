@@ -11,7 +11,7 @@ class ConfigHandler:
         Loads the config from a given file
         """
 
-        if not os.path.exists(f"./{file_name}"):
+        if not os.path.exists(f"{file_name}"):
             raise FileNotFoundError("FATAL ERROR: Impossible to load config from file {file_name} because it doesn't exist")
 
         with open(file_name, "r") as config_file:
