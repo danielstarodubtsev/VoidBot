@@ -438,9 +438,6 @@ async def balance(ctx: commands.Context, user: discord.User = None) -> None:
     pfp = user.display_avatar
     await pfp.to_file(filename="test.png")
 
-    progress_bar_img = Image.new("RGBA", (WIDTH, HEIGHT), color=transparent_color)
-    drawer = ImageDraw.Draw(progress_bar_img)
-
     # Preparing stuff
     pfp_url = user.avatar
     try:
@@ -505,51 +502,61 @@ async def balance(ctx: commands.Context, user: discord.User = None) -> None:
     starting_wins_lb_index = max(0, wins_user_pos - 3)
     ending_wins_lb_index = min(starting_wins_lb_index + 6, len(wins_keys) - 1)
 
-    # Filling the background while leaving rounded corners
-    drawer.rounded_rectangle((0, 0, WIDTH, HEIGHT), fill=background_color, radius=corner_radius)
+    # Starting to render info on the image
+    if os.path.exists("basic_bal_pic.png"):
+        progress_bar_img = Image.open("basic_bal_pic.png")
+        drawer = ImageDraw.Draw(progress_bar_img)
+    else:
+        progress_bar_img = Image.new("RGBA", (WIDTH, HEIGHT), color=transparent_color)
+        drawer = ImageDraw.Draw(progress_bar_img)
+
+        # Filling the background while leaving rounded corners
+        drawer.rounded_rectangle((0, 0, WIDTH, HEIGHT), fill=background_color, radius=corner_radius)
+
+        # Light boxes
+        drawer.rounded_rectangle((20, 129, 417, 370), fill=box_color, radius=corner_radius / 2)
+        drawer.rounded_rectangle((437, 129, 834, 370), fill=box_color, radius=corner_radius / 2)
+        drawer.rounded_rectangle((854, 129, 1251, 370), fill=box_color, radius=corner_radius / 2)
+        drawer.rounded_rectangle((20, 390, 312, 680), fill=box_color, radius=corner_radius / 2)
+        drawer.rounded_rectangle((332, 390, 625, 680), fill=box_color, radius=corner_radius / 2)
+        drawer.rounded_rectangle((645, 390, 1250, 680), fill=box_color, radius=corner_radius / 2)
+
+        # Darker boxes
+        drawer.rounded_rectangle((35, 189, 402, 265), fill=darker_box_color, radius=corner_radius / 4)
+        drawer.rounded_rectangle((452, 189, 819, 265), fill=darker_box_color, radius=corner_radius / 4)
+        drawer.rounded_rectangle((869, 189, 1236, 265), fill=darker_box_color, radius=corner_radius / 4)
+        drawer.rounded_rectangle((35, 279, 402, 355), fill=darker_box_color, radius=corner_radius / 4)
+        drawer.rounded_rectangle((452, 279, 819, 355), fill=darker_box_color, radius=corner_radius / 4)
+        drawer.rounded_rectangle((869, 279, 1236, 355), fill=darker_box_color, radius=corner_radius / 4)
+        drawer.rounded_rectangle((35, 450, 297, 665), fill=darker_box_color, radius=corner_radius / 4)
+        drawer.rounded_rectangle((345, 450, 610, 665), fill=darker_box_color, radius=corner_radius / 4)
+        drawer.rounded_rectangle((660, 450, 1235, 665), fill=darker_box_color, radius=corner_radius / 4)
+
+        # Darkest boxes
+        drawer.rounded_rectangle((35, 189, 182, 265), fill=darkest_box_color, radius=corner_radius / 4)
+        drawer.rounded_rectangle((452, 189, 599, 265), fill=darkest_box_color, radius=corner_radius / 4)
+        drawer.rounded_rectangle((869, 189, 1016, 265), fill=darkest_box_color, radius=corner_radius / 4)
+        drawer.rounded_rectangle((35, 279, 182, 355), fill=darkest_box_color, radius=corner_radius / 4)
+        drawer.rounded_rectangle((452, 279, 599, 355), fill=darkest_box_color, radius=corner_radius / 4)
+        drawer.rounded_rectangle((869, 279, 1016, 355), fill=darkest_box_color, radius=corner_radius / 4)
+        drawer.rounded_rectangle((675, 465, 1220, 525), fill=darkest_box_color, radius=corner_radius / 4)
+        drawer.rounded_rectangle((675, 565, 1220, 625), fill=darkest_box_color, radius=corner_radius / 4)
+
+        # Boxes names
+        drawer.text((35, 134), text="This week", font=header_font)
+        drawer.text((452, 134), text="This month", font=header_font)
+        drawer.text((869, 134), text="All time", font=header_font)
+        drawer.text((35, 398), text="Points LB", font=smaller_font)
+        drawer.text((347, 398), text="Wins LB", font=smaller_font)
+        drawer.text((660, 398), text="Rank progress", font=smaller_font)
+
+        progress_bar_img.save("basic_bal_pic.png")
 
     # Placing the stuff in the top left corner
     progress_bar_img.paste(pfp_image, (20, 20))
     progress_bar_img.paste(guild_icon_image, (125, 75))
     drawer.text((125, 20), text=member.display_name, font=header_font, stroke_width=1)
     drawer.text((165, 73), text=ctx.guild.name, font=smaller_font, fill=light_grey)
-
-    # Light boxes
-    drawer.rounded_rectangle((20, 129, 417, 370), fill=box_color, radius=corner_radius / 2)
-    drawer.rounded_rectangle((437, 129, 834, 370), fill=box_color, radius=corner_radius / 2)
-    drawer.rounded_rectangle((854, 129, 1251, 370), fill=box_color, radius=corner_radius / 2)
-    drawer.rounded_rectangle((20, 390, 312, 680), fill=box_color, radius=corner_radius / 2)
-    drawer.rounded_rectangle((332, 390, 625, 680), fill=box_color, radius=corner_radius / 2)
-    drawer.rounded_rectangle((645, 390, 1250, 680), fill=box_color, radius=corner_radius / 2)
-
-    # Darker boxes
-    drawer.rounded_rectangle((35, 189, 402, 265), fill=darker_box_color, radius=corner_radius / 4)
-    drawer.rounded_rectangle((452, 189, 819, 265), fill=darker_box_color, radius=corner_radius / 4)
-    drawer.rounded_rectangle((869, 189, 1236, 265), fill=darker_box_color, radius=corner_radius / 4)
-    drawer.rounded_rectangle((35, 279, 402, 355), fill=darker_box_color, radius=corner_radius / 4)
-    drawer.rounded_rectangle((452, 279, 819, 355), fill=darker_box_color, radius=corner_radius / 4)
-    drawer.rounded_rectangle((869, 279, 1236, 355), fill=darker_box_color, radius=corner_radius / 4)
-    drawer.rounded_rectangle((35, 450, 297, 665), fill=darker_box_color, radius=corner_radius / 4)
-    drawer.rounded_rectangle((345, 450, 610, 665), fill=darker_box_color, radius=corner_radius / 4)
-    drawer.rounded_rectangle((660, 450, 1235, 665), fill=darker_box_color, radius=corner_radius / 4)
-
-    # Darkest boxes
-    drawer.rounded_rectangle((35, 189, 182, 265), fill=darkest_box_color, radius=corner_radius / 4)
-    drawer.rounded_rectangle((452, 189, 599, 265), fill=darkest_box_color, radius=corner_radius / 4)
-    drawer.rounded_rectangle((869, 189, 1016, 265), fill=darkest_box_color, radius=corner_radius / 4)
-    drawer.rounded_rectangle((35, 279, 182, 355), fill=darkest_box_color, radius=corner_radius / 4)
-    drawer.rounded_rectangle((452, 279, 599, 355), fill=darkest_box_color, radius=corner_radius / 4)
-    drawer.rounded_rectangle((869, 279, 1016, 355), fill=darkest_box_color, radius=corner_radius / 4)
-    drawer.rounded_rectangle((675, 465, 1220, 525), fill=darkest_box_color, radius=corner_radius / 4)
-    drawer.rounded_rectangle((675, 565, 1220, 625), fill=darkest_box_color, radius=corner_radius / 4)
-
-    # Boxes names
-    drawer.text((35, 134), text="This week", font=header_font)
-    drawer.text((452, 134), text="This month", font=header_font)
-    drawer.text((869, 134), text="All time", font=header_font)
-    drawer.text((35, 398), text="Points LB", font=smaller_font)
-    drawer.text((347, 398), text="Wins LB", font=smaller_font)
-    drawer.text((660, 398), text="Rank progress", font=smaller_font)
 
     # Text inside boxes
     drawer.text((108 - points_text_size[0] / 2, 222 - points_text_size[1] / 2), text="Points", font=header_font)
