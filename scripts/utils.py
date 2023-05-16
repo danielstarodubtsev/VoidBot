@@ -3,6 +3,8 @@ import string
 
 import discord
 
+from typing import Union
+
 from discord.ext import commands
 
 
@@ -20,6 +22,16 @@ class Utils:
             charset = string.ascii_lowercase + string.ascii_uppercase + string.digits
 
         return "".join([random.choice(charset) for _ in range(length)])
+    
+    @staticmethod
+    def range_clamp(val: Union[float, int], min_val: Union[float, int], max_val: Union[float, int]) -> Union[float, int]:
+        """
+        If val < min_val, returns min_val
+        if val > max_val, returns max_val
+        Otherwise returns val
+        """
+        
+        return min(max_val, max(min_val, val))
     
     @staticmethod
     def shorten_string(string: str, max_length: int) -> str:
