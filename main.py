@@ -12,8 +12,6 @@ Credit for help, ideas and suggestions:
     * John (John#6436) [id=270018062369947648]
     * Rediff/Mert (|_Mert_|#8053) [id=751377029697372220]
     * Vkij/Teinc (Teinc3#1106) [id=420725289908174859]
-
-!!! ANY DISTRIBUTION OF THE SOURCE CODE WITHOUT DANTHEMAN'S PERMISSION IS PROHIBITED !!!
 """
 
 
@@ -1000,7 +998,7 @@ async def launch_leaderboards(ctx) -> None:
     await channel.send(embed=monthly_lb_embed)
     await channel.send(embed=all_time_lb_embed)
 
-    @bot.command(name="rwp")
+@bot.command(name="rwp")
 @commands.has_role(config["member_role"])
 @DiscordUtils.has_any_of_the_roles(config["staff_roles"])
 async def remove_weekly_points(ctx, amount: int, user: discord.User) -> None:
@@ -1067,10 +1065,69 @@ if __name__ == "__main__":
 
     bot.run(config.get_attribute("token"))
 
-############################################################### - TODO - ###############################################################
+############################################################### - TODO and comments - ###############################################################
 
 """
 TODO:
     - ...
     - ...
+
+All of my thoughts, ideas etc. on the possibilities and ways of further development:
+Note: sections below aren't sorted by relevance or importance
+
+
+    * I don't like how attribute getters/setters currently work in UserDataHandler and ConfigHandler.
+    I don't have any specific ideas how to rework this, except simply making lots of class attributes
+    directly, without the use of distionaries.
+
+    * The use of 'Guild' instances is now inconsistent - somewhere I do ctx.guild to get the guild to
+    work in, somewhere i use the guild given by "server_id" in config regardless of ctx.guild
+    Should we only make it possible to use all the commands in the server given by "server_id"?
+    I don't know, depends on whether we are ever planning to share the code and the bot with any other
+    clan. If this is not the case, an additional decorator for commands can be added ("is_message_in_guild_server"
+    or something like that)
+
+    * bal command should be improved using discord_components. There should be a button that would change the
+    image to one containing only the leaderboards (all of them, not just the ones currently displayed) and 
+    a button to display progress bars (more can be added), also a button to go back to the overview image 
+    (current one). Due to this, bal command should be reworked, and the functions that are displaying all 
+    the info should be moved somewhere outside, and depending on which image should be displayed, one of the 
+    display functions should be called. Also code in bal is kind of messy, it can be improved
+
+    * Some other commands can be reworked to be displayed with images (rather than embeds) as well. Among
+    them: !top, !lb, etc.
+
+    * Maybe the entire user_data database structure should be reworked. Right now it's getting messy and 
+    I don't like it anymore, a simple json doesn't do a good job storing such data. Maybe MySQL is a good option
+
+    * Maybe additional commands that fetch some data from the txt files from the game (player list, clan list)
+    and somehow display it or do something else idk. TT Tracker offers a lot of opportunities here, so maybe it's
+    not needed at all
+
+    * There was this idea with making it possible to assign a "grind pair" - people who assign each other gain 
+    more points for the wins that they got together
+
+    * Daily quests?
+
+    * More custom errors everywhere are needed, right now they exist randomly in places where i felt like adding 
+    them, but generally a custom error class is needed with custom errors all over the place
+
+    * Maybe at this point it's better to inherit a custom bot class from the discord bot object (this has 
+    advantage over the current architecture)
+
+    * Work out whether it's possible to make discord auto-complete the bot commands and suggest arguments with
+    description, just like it works for many general use bots
+
+    * With the current amount of decorators before each function it probably makes more sense to use "checks"
+    argument of the bot.command decorator, i just don't like how it looks so didn't do
+
+    * Would be nice to format the code to follow the PEP 8 line length recommendations (right now some lines 
+    are way too long)
+
+    * Use help_command argument of the bot object? I didn't have time to work out how it works
+
+    * A staff-only bot command "change_prefix" can be added to avoid changing it manually in the config file.
+    Useful for debug purposes, to avoid command outputs being duplicated while a bot is running on the hosting
+    but the developer is testing something new on their PC
+
 """
