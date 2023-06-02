@@ -776,25 +776,28 @@ async def help_command(ctx: commands.Context) -> None:
     Shows all the commands of the bot
     """
 
+    prefix = config.get_attribute("command_prefix")
+
     help_text = f"""**BASIC COMMANDS**
-{config.get_attribute("command_prefix")}g (points) - give the user who used the command a certain amount of points
-{config.get_attribute("command_prefix")}cg (points) (user1) [user2] ... [userN] - gives all listed users a certain amount of points
-{config.get_attribute("command_prefix")}d (points) (user1) [user2] ... [userN] - distibutes the points equally between mentioned users
-{config.get_attribute("command_prefix")}bal [user] - shows the user's balance. By default the user is the one who ran the command
-{config.get_attribute("command_prefix")}top (X) [keyword1] [keyword2] - shows the top X players by "keywords" where keyword1 may be "points" or "wins", keyword2 may be "total", "monthly", "weekly" or "event". Default: keyword1 = "points", keyword2 = "total"
-{config.get_attribute("command_prefix")}lb [user] - shows the user's position on the leaderboard and several players around them. By default the user is the one who ran the command
-{config.get_attribute("command_prefix")}code [user] - shows the user's referral code. By default the user is the one who ran the command. Only available to members with at least {config.get_attribute("commander_threshold")} points
-{config.get_attribute("command_prefix")}usecode (code) - uses a referral code. Only available to members with less than {config.get_attribute("referral_threshold")} points
-{config.get_attribute("command_prefix")}referrals [user] - shows the list of the user's referrals. By default the user is the one who ran the command
-{config.get_attribute("command_prefix")}help - shows this window
+{prefix}g (points) - give the user who used the command a certain amount of points
+{prefix}cg (points) (user1) [user2] ... [userN] - gives all listed users a certain amount of points
+{prefix}d (points) (user1) [user2] ... [userN] - distibutes the points equally between mentioned users
+{prefix}bal [user] - shows the user's balance. By default the user is the one who ran the command
+{prefix}top (X) [keyword1] [keyword2] - shows the top X players by "keywords" where keyword1 may be "points" or "wins", keyword2 may be "total", "monthly", "weekly" or "event". Default: keyword1 = "points", keyword2 = "total"
+{prefix}lb [user] - shows the user's position on the leaderboard and several players around them. By default the user is the one who ran the command
+{prefix}code [user] - shows the user's referral code. By default the user is the one who ran the command. Only available to members with at least {config.get_attribute("commander_threshold")} points
+{prefix}usecode (code) - uses a referral code. Only available to members with less than {config.get_attribute("referral_threshold")} points
+{prefix}referrals [user] - shows the list of the user's referrals. By default the user is the one who ran the command
+{prefix}help - shows this window
 
 **STAFF-ONLY COMMANDS**
-{config.get_attribute("command_prefix")}a (points) (user) - gives the user a certain amount of points
-{config.get_attribute("command_prefix")}r (points) (user) - removes a certain amount of points from the user
-{config.get_attribute("command_prefix")}mult (multiplier) - sets the points multiplier
-{config.get_attribute("command_prefix")}undo - revertes the last points-related command used by any user
-{config.get_attribute("command_prefix")}startevent - starts a new event with a separate points leaderboard. There can only be one event at a time
-{config.get_attribute("command_prefix")}endevent - ends the current event and shows the final event leaderboard"""
+{prefix}a (points) (user) - gives the user a certain amount of points
+{prefix}r (points) (user) - removes a certain amount of points from the user
+{prefix}mult (multiplier) - sets the points multiplier
+{prefix}undo - revertes the last points-related command used by any user
+{prefix}startevent - starts a new event with a separate points leaderboard. There can only be one event at a time
+{prefix}endevent - ends the current event and shows the final event leaderboard
+{prefix}reset (user) - removes all points and wins for a particular user"""
 
     embed = discord.Embed(title="All VoidBot commands", color=discord.Color.dark_gold(), description=help_text)
     await ctx.send(embed=embed)
@@ -916,6 +919,18 @@ async def end_event(ctx: commands.Context) -> None:
     user_data.save_data(config.get_attribute("user_data_file"))
 
     await ctx.send(embed=results_embed)
+
+@bot.command(name="reset")
+@commands.has_role(config.get_attribute("member_role"))
+@DiscordUtils.has_any_of_the_roles(config.get_attribute("staff_roles"))
+async def reset_member(ctx: commands.Context, user: discord.User) -> None:
+    """
+    Resets all wins and points for a particular member
+    """
+
+    user_data.reset_entry(user.id)
+    await update_user(ctx=ctx, user=user)
+    await show_message(ctx=ctx, message_title="Success!", message_text="All points and wins of the member have been successfuly reset")
 
 ############################################################### - ON_EVENT ACTIONS - ###############################################################
 
