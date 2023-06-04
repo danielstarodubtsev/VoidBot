@@ -70,7 +70,7 @@ class UserDataHandler:
         """
 
         if not self.is_in_database(id):
-            raise Exception(f"User with id <{id}> isn't in the database")
+            raise KeyError(f"User with id <{id}> isn't in the database")
         
         return self._user_data[str(id)]
     
@@ -105,7 +105,7 @@ class UserDataHandler:
         """
 
         if not self.is_in_database(id):
-            raise Exception("User with id <{id}> isn't in the database")
+            raise KeyError("User with id <{id}> isn't in the database")
         
         self._user_data[str(id)] = deepcopy(self._default_entry)
         self._reset_referral_code()

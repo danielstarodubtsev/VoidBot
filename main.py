@@ -442,7 +442,7 @@ async def balance(ctx: commands.Context, user: discord.User = None) -> None:
         image_data = requests.get(pfp_url).content
         pfp_image = Image.open(BytesIO(image_data))
     except: # Occurs if user doesn't have a pfp
-        pfp_image = Image.open("images/default_discord_pfp.png")
+        pfp_image = Image.open("assets/default_discord_pfp.png")
     pfp_image = pfp_image.resize((90, 90))
 
     guild_icon_url = ctx.guild.icon
