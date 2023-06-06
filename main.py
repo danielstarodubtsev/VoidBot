@@ -599,8 +599,15 @@ async def balance(ctx: commands.Context, user: discord.User = None) -> None:
     drawer.text((1220 - smallest_font.getbbox(next_rank)[2], 530), text=next_rank, font=smallest_font)
     drawer.text((675, 630), text=global_member_rank, font=smallest_font)
     drawer.text((1220 - smallest_font.getbbox(next_global_member_rank)[2], 630), text=next_global_member_rank, font=smallest_font)
-    drawer.rounded_rectangle((675, 465, 675 + upper_bar_length, 525), fill=light_grey, radius=corner_radius / 4)
-    drawer.rounded_rectangle((675, 565, 675 + lower_bar_length, 625), fill=light_grey, radius=corner_radius / 4)
+    try:
+        drawer.rounded_rectangle((675, 465, 675 + upper_bar_length, 525), fill=light_grey, radius=corner_radius / 4)
+    except ValueError: # occurs if the bar is so small that it can't be rounded properly
+        drawer.rectangle((675, 465, 675 + upper_bar_length, 525), fill=light_grey)
+    
+    try:
+        drawer.rounded_rectangle((675, 565, 675 + lower_bar_length, 625), fill=light_grey, radius=corner_radius / 4)
+    except ValueError: # occurs if the bar is so small that it can't be rounded properly
+        drawer.rectangle((675, 565, 675 + lower_bar_length, 625), fill=light_grey)
 
     # Display percentage text depending on whether the bar is more than half full or no
     upper_percentage_text = f"{upper_percentage}%"
