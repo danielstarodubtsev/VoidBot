@@ -262,7 +262,7 @@ async def send_leaderboard_summary(leaderboard_type: str) -> None:
     user_data.sort_database(leaderboard_type)
 
     data = [id for id in user_data.list_ids() if user_data.get_attribute(id, leaderboard_type) > 0 and DiscordUtils.is_user_in_guild(id, guild)]
-    file_lines = [f"{index}. {guild.get_member(int(id)).display_name} - {user_data.get_attribute(id, leaderboard_type)}" for index, id in enumerate(data, start=1)]
+    file_lines = [f"{index}. <{id}> {guild.get_member(int(id)).display_name} - {user_data.get_attribute(id, leaderboard_type)}" for index, id in enumerate(data, start=1)]
 
     with open("cache_leaderboard_summary.txt", "w", encoding="utf-8") as cache_leaderboard_summary_file:
         cache_leaderboard_summary_file.write("\n".join(file_lines))
