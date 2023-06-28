@@ -752,7 +752,6 @@ async def help_command(ctx: commands.Context) -> None:
 {prefix}d (points) (user1) [user2] ... [userN] - distibutes the points equally between mentioned users
 {prefix}bal [user] - shows the user's balance. By default the user is the one who ran the command
 {prefix}top (X) [keyword1] [keyword2] - shows the top X players by "keywords" where keyword1 may be "points" or "wins", keyword2 may be "total", "monthly", "weekly" or "event". Default: keyword1 = "points", keyword2 = "total"
-{prefix}lb [user] - shows the user's position on the leaderboard and several players around them. By default the user is the one who ran the command
 {prefix}code [user] - shows the user's referral code. By default the user is the one who ran the command. Only available to members with at least {config.get_attribute("commander_threshold")} points
 {prefix}usecode (code) - uses a referral code. Only available to members with less than {config.get_attribute("referral_threshold")} points
 {prefix}referrals [user] - shows the list of the user's referrals. By default the user is the one who ran the command
