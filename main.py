@@ -667,45 +667,6 @@ async def top_players(ctx: commands.Context, top: int, by1: str = "points", by2:
 
     await ctx.send(embed=embed)
 
-@bot.command(name="lb")
-@commands.has_role(config.get_attribute("member_role"))
-async def leaderboard(ctx: commands.Context, user: discord.User = None) -> None:
-    """
-    Shows the player's position on the leaderboard and several players around them
-    """
-
-    if not user:
-        user = bot.get_user(ctx.author.id)
-
-    user_data.sort_database("total_points")
-    keys = [id for id in user_data.list_ids() if DiscordUtils.is_user_in_guild(id, ctx.guild)]
-    user_pos = keys.index(user.id)
-
-    embed_text = ""
-    for pos in range(user_pos + 4, user_pos - 6, -1):
-        if not 0 <= pos < len(keys):
-            continue
-
-        if pos + 1 == 1:
-            place = ":first_place:"
-        elif pos + 1 == 2:
-            place = ":second_place:"
-        elif pos + 1 == 3:
-            place = ":third_place:"
-        else:
-            place = f"{pos + 1}."
-        
-        member = bot.get_guild(config.get_attribute("server_id")).get_member(int(keys[pos]))
-
-        if pos == user_pos:
-            embed_text = f"**{place} {member.display_name}: :coin: {user_data.get_attribute(keys[pos], 'total_points')}**\n" + embed_text
-        else:
-            embed_text = f"{place} {member.display_name}: :coin: {user_data.get_attribute(keys[pos], 'total_points')}\n" + embed_text
-
-    embed = discord.Embed(title="Leaderboard", color=discord.Color.blue(), description=embed_text)
-
-    await ctx.send(embed=embed)
-
 @bot.command(name="code")
 @commands.has_role(config.get_attribute("member_role"))
 async def get_referral_code(ctx: commands.Context, user: discord.User = None) -> None:
@@ -1075,6 +1036,45 @@ Total: {user_data[user_id]["total_points"]} -> {user_data[user_id]["total_points
     user_data[user_id]["monthly_points"] -= amount
 
     embed = discord.Embed(color=discord.Color.green(), title=member.display_name, description=embed_text)
+
+    await ctx.send(embed=embed)
+
+@bot.command(name="lb")
+@commands.has_role(config.get_attribute("member_role"))
+async def leaderboard(ctx: commands.Context, user: discord.User = None) -> None:
+    """
+    Shows the player's position on the leaderboard and several players around them
+    """
+
+    if not user:
+        user = bot.get_user(ctx.author.id)
+
+    user_data.sort_database("total_points")
+    keys = [id for id in user_data.list_ids() if DiscordUtils.is_user_in_guild(id, ctx.guild)]
+    user_pos = keys.index(user.id)
+
+    embed_text = ""
+    for pos in range(user_pos + 4, user_pos - 6, -1):
+        if not 0 <= pos < len(keys):
+            continue
+
+        if pos + 1 == 1:
+            place = ":first_place:"
+        elif pos + 1 == 2:
+            place = ":second_place:"
+        elif pos + 1 == 3:
+            place = ":third_place:"
+        else:
+            place = f"{pos + 1}."
+        
+        member = bot.get_guild(config.get_attribute("server_id")).get_member(int(keys[pos]))
+
+        if pos == user_pos:
+            embed_text = f"**{place} {member.display_name}: :coin: {user_data.get_attribute(keys[pos], 'total_points')}**\n" + embed_text
+        else:
+            embed_text = f"{place} {member.display_name}: :coin: {user_data.get_attribute(keys[pos], 'total_points')}\n" + embed_text
+
+    embed = discord.Embed(title="Leaderboard", color=discord.Color.blue(), description=embed_text)
 
     await ctx.send(embed=embed)
 '''
