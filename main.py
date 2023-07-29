@@ -1147,5 +1147,4 @@ Note: sections below aren't sorted by relevance or importance
     * A staff-only bot command "change_prefix" can be added to avoid changing it manually in the config file.
     Useful for debug purposes, to avoid command outputs being duplicated while a bot is running on the hosting
     but the developer is testing something new on their PC
-
 """
