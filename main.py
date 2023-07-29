@@ -1136,9 +1136,6 @@ Note: sections below aren't sorted by relevance or importance
     * Maybe at this point it's better to inherit a custom bot class from the discord bot object (this has 
     advantage over the current architecture)
 
-    * Work out whether it's possible to make discord auto-complete the bot commands and suggest arguments with
-    description, just like it works for many general use bots
-
     * With the current amount of decorators before each function it probably makes more sense to use "checks"
     argument of the bot.command decorator, i just don't like how it looks so didn't do
 
