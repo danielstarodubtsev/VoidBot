@@ -1136,6 +1136,8 @@ Note: sections below aren't sorted by relevance or importance
     * Maybe at this point it's better to inherit a custom bot class from the discord bot object (this has 
     advantage over the current architecture)
 
+    * Switch to slash commands
+
     * With the current amount of decorators before each function it probably makes more sense to use "checks"
     argument of the bot.command decorator, i just don't like how it looks so didn't do
 
@@ -1147,4 +1149,5 @@ Note: sections below aren't sorted by relevance or importance
     * A staff-only bot command "change_prefix" can be added to avoid changing it manually in the config file.
     Useful for debug purposes, to avoid command outputs being duplicated while a bot is running on the hosting
     but the developer is testing something new on their PC
+
 """
